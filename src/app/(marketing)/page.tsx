@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Users, Briefcase, MapPin, Crosshair, BarChart3, Handshake, Phone, Mail, Clock } from "lucide-react";
 import { getPageSeo } from "@/lib/seo";
 import Image from "next/image";
-import ParticlesBackground from "@/components/ui/ParticlesBackground";
+
 
 const DynamicIcon = ({ name }: { name: string }) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,8 +107,7 @@ export default async function HomePage() {
 
         <div className="absolute inset-0 opacity-[0.04] bg-grid-pattern" />
 
-        {/* Dynamic Particle Animation */}
-        <ParticlesBackground />
+
 
         {/* Hero background image (subtle) */}
         <div className="absolute inset-0 z-0 opacity-[0.12]">
