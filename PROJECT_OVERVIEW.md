@@ -3,6 +3,7 @@
 This document provides a comprehensive summary of the Genesoft Infotech Website project, including the database schema, folder structure, and key features implemented.
 
 ## 1. Project Goal
+
 Build a modern, dynamic corporate website for **Genesoft Infotech** with a comprehensive Admin Dashboard for content management. The site is built for performance (Next.js), scalability (Supabase), and ease of maintenance.
 
 ---
@@ -49,23 +50,27 @@ The project uses a relational database (PostgreSQL) hosted on Supabase.
 ## 4. Work Completed
 
 ### Phase 1: Core Foundation
+
 *   ✅ Setup Next.js 14 project with Tailwind CSS.
 *   ✅ Integrated Supabase Client for data fetching.
 *   ✅ Implemented "Dark Mode" corporate aesthetic.
 
 ### Phase 2: Public Website
+
 *   ✅ **Homepage**: Dynamic Hero, Services Grid, Testimonials, and Contact CTA.
 *   ✅ **Service Pages**: Individual detail pages for each service (`/services/[slug]`).
 *   ✅ **Contact Form**: Functional form integrating with Supabase DB and Resend Email API.
 *   ✅ **SEO**: Dynamic metadata generation for all pages.
 
 ### Phase 3: Admin Dashboard (`/dashboard`)
+
 *   ✅ **Secure Authentication**: Protected routes using Supabase Auth.
 *   ✅ **Media Library**: Custom-built file manager with Drag & Drop upload and multi-select.
 *   ✅ **Site Settings**: centralized control for Company Name, Logos, and Social Links.
 *   ✅ **CRUD Management**: Full editing capabilities for Services, Projects, and Clients.
 
 ### Phase 4: Automation & DevTools
+
 *   ✅ **Database Automation**: Scripts (`npm run db:bucket`, `npm run db:sql`) to manage infrastructure.
 *   ✅ **Linting & Quality**: Strict TypeScript and ESLint configuration for code stability.
 
@@ -73,7 +78,7 @@ The project uses a relational database (PostgreSQL) hosted on Supabase.
 
 ## 5. Folder Structure
 
-```
+```text
 /
 ├── public/                 # Static assets (favicons, robots.txt)
 ├── src/
