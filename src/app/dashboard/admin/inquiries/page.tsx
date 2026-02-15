@@ -99,16 +99,27 @@ export default function InquiriesPage() {
                             }`}
                         >
                             <div className="flex justify-between items-start mb-2">
-                                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
-                                    inquiry.status === 'new' 
-                                    ? 'bg-blue-500/20 text-blue-400' 
-                                    : 'bg-green-500/20 text-green-400'
-                                }`}>
-                                    {inquiry.status}
-                                </span>
-                                <span className="text-xs text-[var(--color-text-muted)]">
-                                    {new Date(inquiry.created_at).toLocaleDateString()}
-                                </span>
+                                <div className="flex gap-2 items-center">
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${
+                                        inquiry.status === 'new' 
+                                        ? 'bg-blue-500/20 text-blue-400' 
+                                        : 'bg-green-500/20 text-green-400'
+                                    }`}>
+                                        {inquiry.status}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-[var(--color-text-muted)] group-hover:opacity-0 transition-opacity">
+                                        {new Date(inquiry.created_at).toLocaleDateString()}
+                                    </span>
+                                    <button 
+                                        onClick={(e) => handleDeleteClick(inquiry.id, e)}
+                                        className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                                        title="Delete Inquiry"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
                             <h3 className="text-white font-bold truncate mb-1">{inquiry.name}</h3>
                             <p className="text-sm text-[var(--color-text-muted)] truncate flex items-center gap-2">
@@ -148,10 +159,10 @@ export default function InquiriesPage() {
                                 )}
                                     <button 
                                         onClick={(e) => handleDeleteClick(selectedInquiry.id, e)}
-                                        className="p-3 text-red-400 hover:bg-red-400/10 rounded-xl transition-colors border border-transparent hover:border-red-400/20"
-                                        title="Delete"
+                                        className="px-4 py-2 text-red-400 hover:bg-red-400/10 rounded-xl transition-colors border border-red-500/20 flex items-center gap-2 font-bold text-sm"
+                                        title="Delete Inquiry"
                                     >
-                                        <Trash2 size={20} />
+                                        <Trash2 size={18} /> Delete Inquiry
                                     </button>
                             </div>
                         </div>
