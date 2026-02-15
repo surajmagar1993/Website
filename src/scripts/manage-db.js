@@ -1,5 +1,6 @@
-
-/* eslint-disable @typescript-eslint/no-require-imports */
+const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config({ path: '.env.local' });
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -95,13 +96,16 @@ async function runSql(filePath) {
     console.log(`Executing SQL from ${path.basename(filePath)} via RPC...`);
     
     // Call the exec_sql function we created
-    const { error } = await supabase.rpc('exec_sql', { sql_query: sqlContent });
+    const { data, error } = await supabase.rpc('exec_sql', { sql_query: sqlContent });
 
     if (error) {
         console.error('❌ SQL Execution Error:', error.message);
         console.error('   Hint: Did you run "setup_rpc.sql" in Supabase SQL Editor?');
     } else {
         console.log(`✅ SQL executed successfully.`);
+        if (data) {
+            console.log('Results:', JSON.stringify(data, null, 2));
+        }
     }
 }
 

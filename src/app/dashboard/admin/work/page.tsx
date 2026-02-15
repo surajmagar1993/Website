@@ -12,7 +12,7 @@ interface CaseStudy {
   category: string;
   result: string;
   slug?: string;
-  image_url?: string;
+  case_study_image?: string;
   display_order: number;
 }
 
@@ -30,7 +30,7 @@ export default function WorkPage() {
     category: "",
     result: "",
     slug: "",
-    image_url: "",
+    case_study_image: "",
     display_order: 0,
   });
 
@@ -58,7 +58,7 @@ export default function WorkPage() {
         category: item.category,
         result: item.result,
         slug: item.slug || "",
-        image_url: item.image_url || "",
+        case_study_image: item.case_study_image || "",
         display_order: item.display_order,
       });
     } else {
@@ -68,7 +68,7 @@ export default function WorkPage() {
         category: "",
         result: "",
         slug: "",
-        image_url: "",
+        case_study_image: "",
         display_order: caseStudies.length + 1,
       });
     }
@@ -91,7 +91,7 @@ export default function WorkPage() {
       category: formData.category,
       result: formData.result,
       slug: formData.slug,
-      image_url: formData.image_url,
+      case_study_image: formData.case_study_image,
       display_order: formData.display_order,
     };
 
@@ -282,8 +282,8 @@ export default function WorkPage() {
                     <div className="space-y-2">
                          <ImageUpload
                             label="Case Study Image"
-                            value={formData.image_url}
-                            onChange={url => setFormData(p => ({ ...p, image_url: url }))}
+                            value={formData.case_study_image}
+                            onChange={url => setFormData(p => ({ ...p, case_study_image: url }))}
                             folder="projects"
                         />
                     </div>

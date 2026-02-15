@@ -98,26 +98,26 @@ export default function Header({ settings }: { settings?: SiteSettings }) {
 
       {/* Mobile Menu Overlay */}
       {isOpen && (
-        <div className="lg:hidden fixed inset-0 top-[60px] bg-[var(--color-bg)]/95 backdrop-blur-xl z-40">
-          <nav className="flex flex-col p-6">
+        <div className="lg:hidden fixed inset-0 top-[60px] bg-[var(--color-bg)]/95 backdrop-blur-xl z-40 overflow-y-auto">
+          <nav className="flex flex-col p-6 pb-20">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsOpen(false)}
-                className="flex items-center justify-between py-4 border-b border-[var(--color-glass-border)] text-lg font-[family-name:var(--font-heading)] font-semibold uppercase tracking-wide text-white"
+                className="flex items-center justify-between py-3 border-b border-[var(--color-glass-border)] text-lg font-[family-name:var(--font-heading)] font-medium uppercase tracking-wide text-white"
               >
-                {link.label}
-                <ChevronRight size={20} className="text-[var(--color-text-muted)]" />
+                <span className="flex-1 text-left">{link.label}</span>
+                <ChevronRight size={18} className="text-[var(--color-text-muted)]" />
               </Link>
             ))}
             <Link
               href="/login"
               onClick={() => setIsOpen(false)}
-              className="flex items-center justify-between py-4 border-b border-[var(--color-glass-border)] text-lg font-[family-name:var(--font-heading)] font-semibold uppercase tracking-wide text-[var(--color-primary)]"
+              className="flex items-center justify-between py-3 border-b border-[var(--color-glass-border)] text-lg font-[family-name:var(--font-heading)] font-medium uppercase tracking-wide text-[var(--color-primary)]"
             >
               Client Login
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </Link>
             <Link
               href="/contact"

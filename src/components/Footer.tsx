@@ -122,7 +122,7 @@ export default function Footer({ settings }: { settings?: SiteSettings }) {
               <li className="flex items-start gap-3">
                 <MapPin size={18} className="text-[var(--color-primary)] mt-0.5 flex-shrink-0" />
                 <span className="text-[var(--color-text-secondary)] text-sm leading-relaxed whitespace-pre-line">
-                  {settings?.contact_address || 'Shivtirtha Bungalow, Lane No.15,\nPrabhat Road, Erandwane,\nPune, Maharashtra 411004'}
+                  {settings?.contact_address || 'Shivtirtha Bungalow, Lane 15, Khese Park,\nLohegaon, Pune, Maharashtra 411032'}
                 </span>
               </li>
               <li>

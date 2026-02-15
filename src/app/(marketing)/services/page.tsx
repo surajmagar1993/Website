@@ -1,6 +1,9 @@
+import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { ArrowRight, Globe, Smartphone, Search, BarChart3, Target, Monitor } from "lucide-react";
+import { ArrowRight, Globe, Smartphone, Search, BarChart3, Target, Monitor, Code, Database, Cloud, Shield, Zap, Layout, Server, Cpu } from "lucide-react";
+import ImagePlaceholder from "@/components/ui/ImagePlaceholder";
 
+// Extended icon map to cover more potential icons
 const iconMap: Record<string, React.ReactNode> = {
   Globe: <Globe size={32} />,
   Smartphone: <Smartphone size={32} />,
@@ -8,54 +11,26 @@ const iconMap: Record<string, React.ReactNode> = {
   BarChart3: <BarChart3 size={32} />,
   Target: <Target size={32} />,
   Monitor: <Monitor size={32} />,
+  Code: <Code size={32} />,
+  Database: <Database size={32} />,
+  Cloud: <Cloud size={32} />,
+  Shield: <Shield size={32} />,
+  Zap: <Zap size={32} />,
+  Layout: <Layout size={32} />,
+  Server: <Server size={32} />,
+  Cpu: <Cpu size={32} />,
 };
 
-const services = [
-  {
-    slug: "web-development",
-    icon: "Globe",
-    title: "Web Development",
-    description: "Custom-built digital experiences that drive results. From landing pages to complex SaaS platforms — responsive, fast, and SEO-optimized.",
-    highlights: ["Next.js 15", "React 19", "TypeScript", "Tailwind CSS v4"],
-  },
-  {
-    slug: "app-development",
-    icon: "Smartphone",
-    title: "App Development",
-    description: "Native and cross-platform mobile solutions. iOS, Android, React Native 0.76, Flutter 3.27. End-to-end — design, build, deploy.",
-    highlights: ["React Native", "Flutter", "iOS", "Android"],
-  },
-  {
-    slug: "market-research",
-    icon: "Search",
-    title: "Market Research",
-    description: "Data-driven insights to guide your strategy. Competitive analysis, consumer behavior, and trend forecasting that informs smarter decisions.",
-    highlights: ["Competitive Intel", "Consumer Analysis", "Trend Mapping"],
-  },
-  {
-    slug: "data-analytics",
-    icon: "BarChart3",
-    title: "Data Analytics",
-    description: "Transform raw data into strategic advantage. Custom dashboards, data pipelines, and predictive models for evidence-based decisions.",
-    highlights: ["Python 3.13", "Power BI", "Machine Learning", "ETL"],
-  },
-  {
-    slug: "lead-generation",
-    icon: "Target",
-    title: "Lead Generation",
-    description: "Fill your pipeline with qualified prospects. Multi-channel campaigns across LinkedIn, email, content, and paid ads that convert.",
-    highlights: ["LinkedIn Outreach", "Email Campaigns", "Paid Ads", "SEO"],
-  },
-  {
-    slug: "it-products",
-    icon: "Monitor",
-    title: "IT Products & Rentals",
-    description: "Enterprise hardware — purchase or rent. Laptops, servers, networking equipment with maintenance and support included.",
-    highlights: ["Laptop Rentals", "Servers", "Networking", "Support"],
-  },
-];
+export const revalidate = 60; // Revalidate every 60 seconds
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const { data: services } = await supabase
+    .from("services")
+    .select("*")
+    .order("display_order", { ascending: true });
+
+  const safeServices = services || [];
+
   return (
     <>
       {/* Hero */}
@@ -77,46 +52,66 @@ export default function ServicesPage() {
         </div>
       </section>
 
+
+
       {/* Services Grid */}
       <section className="pb-20 relative">
         <div className="container mx-auto px-6">
-          <div className="space-y-4">
-            {services.map((service, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {safeServices.map((service, i) => (
               <Link
                 key={service.slug}
                 href={`/services/${service.slug}`}
-                className={`glass rounded-2xl p-8 md:p-10 flex flex-col md:flex-row md:items-center gap-6 md:gap-10 group hover:border-[var(--color-primary)]/30 transition-all duration-300 block fade-up fade-up-delay-${Math.min(i + 1, 6)}`}
+                className={`glass rounded-2xl p-6 group hover:border-[var(--color-primary)]/30 transition-all duration-300 flex flex-col h-full fade-up fade-up-delay-${Math.min(i + 1, 6)} hover:-translate-y-1`}
               >
-                {/* Number + Icon */}
-                <div className="flex items-center gap-6 md:w-48 flex-shrink-0">
-                  <span className="font-[family-name:var(--font-heading)] text-4xl font-bold text-[var(--color-text-muted)]/30">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div className="text-[var(--color-primary)] group-hover:scale-110 transition-transform duration-300">
-                    {iconMap[service.icon]}
-                  </div>
+                {/* Image Section */}
+                <div className="w-full aspect-video rounded-xl overflow-hidden mb-6 bg-black/20 border border-white/5 relative">
+                   {service.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img 
+                        src={service.image_url} 
+                        alt={service.title} 
+                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" 
+                      />
+                   ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-white/5 to-white/0 group-hover:scale-105 transition-transform duration-500">
+                           <div className="text-[var(--color-primary)] mb-3 opacity-80">
+                               {iconMap[service.icon] || <Globe size={40} />}
+                           </div>
+                           <p className="text-xs text-[var(--color-text-muted)] font-medium">Explore Service</p>
+                      </div>
+                   )}
+                   
+                   {/* Overlay Number */}
+                   <div className="absolute top-4 right-4 text-4xl font-[family-name:var(--font-heading)] font-bold text-white/5 group-hover:text-white/10 transition-colors">
+                      {String(i + 1).padStart(2, "0")}
+                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1">
-                  <h2 className="font-[family-name:var(--font-heading)] text-xl md:text-2xl font-bold mb-3 text-white group-hover:text-[var(--color-primary)] transition-colors">
+                <div className="flex-1 flex flex-col">
+                  <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold mb-3 text-white group-hover:text-[var(--color-primary)] transition-colors flex items-center justify-between">
                     {service.title}
+                    <ArrowRight size={20} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-[var(--color-primary)] space-x-reverse" />
                   </h2>
-                  <p className="text-[var(--color-text-secondary)] text-sm md:text-base leading-relaxed mb-4">
+                  <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed mb-6 line-clamp-3">
                     {service.description}
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    {service.highlights.map((h) => (
-                      <span key={h} className="text-xs font-[family-name:var(--font-heading)] uppercase tracking-wider text-[var(--color-text-muted)] border border-[var(--color-glass-border)] rounded-lg px-3 py-1">
-                        {h}
-                      </span>
-                    ))}
+                  
+                  <div className="mt-auto pt-4 border-t border-white/5">
+                      <div className="flex flex-wrap gap-2">
+                        {(service.technologies && service.technologies.length > 0 ? service.technologies : service.features || []).slice(0, 3).map((h: string) => (
+                          <span key={h} className="text-[10px] font-[family-name:var(--font-heading)] uppercase tracking-wider text-[var(--color-text-muted)] bg-white/5 rounded px-2 py-1">
+                            {h}
+                          </span>
+                        ))}
+                        {(service.technologies?.length > 3 || service.features?.length > 3) && (
+                            <span className="text-[10px] font-[family-name:var(--font-heading)] uppercase tracking-wider text-[var(--color-text-muted)] bg-white/5 rounded px-2 py-1">
+                                +More
+                            </span>
+                        )}
+                      </div>
                   </div>
-                </div>
-
-                {/* Arrow */}
-                <div className="hidden md:flex items-center justify-center w-12 h-12 glass rounded-xl group-hover:border-[var(--color-primary)]/30 group-hover:text-[var(--color-primary)] text-[var(--color-text-muted)] transition-all flex-shrink-0">
-                  <ArrowRight size={20} />
                 </div>
               </Link>
             ))}

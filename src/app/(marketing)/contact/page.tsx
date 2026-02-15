@@ -59,7 +59,7 @@ export default async function ContactPage() {
                     <div>
                       <p className="text-xs font-[family-name:var(--font-heading)] uppercase tracking-widest text-[var(--color-text-muted)] mb-1">Address</p>
                       <p className="text-[var(--color-text-secondary)] text-sm whitespace-pre-line">
-                        {settings.contact_address || "Shivtirtha Bungalow, Lane No.15,\nPrabhat Road, Erandwane,\nPune, Maharashtra 411004"}
+                        {settings.contact_address || "Shivtirtha Bungalow, Lane 15, Khese Park,\nLohegaon, Pune, Maharashtra 411032"}
                       </p>
                     </div>
                   </li>
@@ -106,7 +106,7 @@ export default async function ContactPage() {
               {/* Map */}
               <div className="glass rounded-2xl overflow-hidden h-[200px]">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3783.456!2d73.8303!3d18.5142!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTjCsDMwJzUxLjEiTiA3M8KwNDknNDkuMSJF!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(settings.contact_address || "Shivtirtha Bungalow, Lane 15, Khese Park, Lohegaon, Pune, Maharashtra 411032")}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                   width="100%"
                   height="100%"
                   className="w-full h-full map-dark-filter border-0"

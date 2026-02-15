@@ -1,11 +1,13 @@
 import { supabase } from "@/lib/supabase";
 import { getSiteSettings } from "@/lib/settings";
 import * as Icons from "lucide-react";
-import { GlowCard, StaggerItem, FadeIn, TextReveal, ParallaxOrb, StaggerContainer } from "@/components/Motion";
+import { GlowCard, StaggerItem, FadeIn, ParallaxOrb, StaggerContainer } from "@/components/Motion";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Users, Briefcase, MapPin, Crosshair, BarChart3, Handshake, Phone, Mail, Clock } from "lucide-react";
 import { getPageSeo } from "@/lib/seo";
 import Image from "next/image";
+import { HyperText } from "@/components/ui/HyperText";
+import ImagePlaceholder from "@/components/ui/ImagePlaceholder";
 
 
 const DynamicIcon = ({ name }: { name: string }) => {
@@ -18,11 +20,7 @@ export async function generateMetadata() {
   return await getPageSeo('/');
 }
 
-const trustBadges = [
-  { value: "50+", label: "Businesses Served", icon: <Users size={20} /> },
-  { value: "200+", label: "Projects Delivered", icon: <Briefcase size={20} /> },
-  { value: "Pune", label: "Based in India", icon: <MapPin size={20} /> },
-];
+
 
 const valueProps = [
   {
@@ -87,6 +85,24 @@ async function ClientLogos() {
 export default async function HomePage() {
   const settings = await getSiteSettings();
 
+  const trustBadges = [
+    { 
+      value: settings.trust_badge_1_value || "50+", 
+      label: settings.trust_badge_1_label || "Businesses Served", 
+      icon: <Users size={20} /> 
+    },
+    { 
+      value: settings.trust_badge_2_value || "200+", 
+      label: settings.trust_badge_2_label || "Projects Delivered", 
+      icon: <Briefcase size={20} /> 
+    },
+    { 
+      value: settings.trust_badge_3_value || "Pune", 
+      label: settings.trust_badge_3_label || "Based in India", 
+      icon: <MapPin size={20} /> 
+    },
+  ];
+
   const { data: services } = await supabase
     .from('services')
     .select('*')
@@ -101,24 +117,12 @@ export default async function HomePage() {
     <>
       {/* ═══ SECTION 1: HERO ═══ */}
       <section className="min-h-screen flex items-center justify-center relative overflow-hidden">
-        <ParallaxOrb speed={0.5} className="orb orb-orange w-[500px] h-[500px] top-[-10%] left-[-5%]" />
-        <ParallaxOrb speed={-0.3} className="orb orb-amber w-[400px] h-[400px] top-[20%] right-[-5%]" />
-        <ParallaxOrb speed={0.2} className="orb orb-blue w-[350px] h-[350px] bottom-[-5%] left-[30%]" />
-
-        <div className="absolute inset-0 opacity-[0.04] bg-grid-pattern" />
+        {/* Global Animation is handled in layout.tsx */}
 
 
 
-        {/* Hero background image (subtle) */}
-        <div className="absolute inset-0 z-0 opacity-[0.12]">
-          <Image 
-            src={settings.home_hero_image || "/images/hero-bg.png"} 
-            alt="Hero Background" 
-            fill 
-            className="object-cover object-center" 
-            priority 
-          />
-        </div>
+
+
 
         <div className="container mx-auto px-6 relative z-10 pt-32 pb-20">
           <div className="max-w-4xl text-center mx-auto">
@@ -126,9 +130,10 @@ export default async function HomePage() {
               <FadeIn delay={0.2} className="inline-block px-2">
                 {settings.home_hero_title || "Transform Your Business With"}
               </FadeIn>
-              <span className="glow-text mt-2 px-2 max-w-[12ch] sm:max-w-none">
-                <TextReveal text={settings.home_hero_title_suffix || "Technology That Works."} delay={0.4} />
-              </span>
+              <HyperText 
+                text={settings.home_hero_title_suffix || "Technology That Works."} 
+                className="glow-text mt-2 px-2 max-w-[12ch] sm:max-w-none text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-[family-name:var(--font-heading)] font-[900]"
+              />
             </h1>
 
             <FadeIn delay={0.6}>
@@ -222,17 +227,29 @@ export default async function HomePage() {
               services.map((service) => (
                 <StaggerItem key={service.id}>
                   <Link href={`/services/${service.slug}`} className="block h-full group">
-                    <GlowCard className="h-full p-8 rounded-2xl flex flex-col">
-                      <div className="w-12 h-12 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center mb-6 text-[var(--color-primary)] group-hover:bg-[var(--color-primary)]/20 transition-colors">
-                        <DynamicIcon name={service.icon} />
-                      </div>
-                      <h3 className="text-xl font-bold text-white mb-3 font-[family-name:var(--font-heading)] group-hover:text-[var(--color-primary)] transition-colors">
+                    <GlowCard className="h-full p-8 rounded-2xl flex flex-col relative overflow-hidden">
+                      {service.image_url ? (
+                        <div className="w-full h-48 mb-6 rounded-xl overflow-hidden relative group-hover:shadow-lg transition-all">
+                          <Image 
+                            src={service.image_url} 
+                            alt={service.title} 
+                            fill 
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center mb-6 text-[var(--color-primary)] group-hover:bg-[var(--color-primary)]/20 transition-colors">
+                          <DynamicIcon name={service.icon} />
+                        </div>
+                      )}
+                      
+                      <h3 className="text-xl font-bold text-white mb-3 font-[family-name:var(--font-heading)] group-hover:text-[var(--color-primary)] transition-colors relative z-10">
                         {service.title}
                       </h3>
-                      <p className="text-[var(--color-text-muted)] leading-relaxed text-sm flex-1">
+                      <p className="text-[var(--color-text-muted)] leading-relaxed text-sm flex-1 relative z-10">
                         {service.description}
                       </p>
-                      <div className="mt-6 flex items-center gap-2 text-[var(--color-primary)] text-sm font-[family-name:var(--font-heading)] font-medium group-hover:gap-3 transition-all">
+                      <div className="mt-6 flex items-center gap-2 text-[var(--color-primary)] text-sm font-[family-name:var(--font-heading)] font-medium group-hover:gap-3 transition-all relative z-10">
                         Learn More <ArrowRight size={16} />
                       </div>
                     </GlowCard>
@@ -348,28 +365,47 @@ export default async function HomePage() {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (caseStudies as any[]).map((study) => (
                 <StaggerItem key={study.id} className="group cursor-pointer">
-                  <div className="glass p-8 rounded-3xl h-full border border-white/5 hover:border-[var(--color-primary)]/30 transition-all duration-500 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between mb-6">
-                        <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] border border-[var(--color-primary)]/20 px-3 py-1 rounded-full">
-                          {study.category}
-                        </span>
-                        <ArrowUpRight className="text-[var(--color-text-muted)] group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
-                      </div>
-                      <h3 className="text-2xl font-bold text-white mb-4 font-[family-name:var(--font-heading)] group-hover:text-[var(--color-primary)] transition-colors">
-                        {study.title}
-                      </h3>
-                      <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed mb-6">
-                        {study.description}
-                      </p>
+                  <div className="glass p-6 rounded-3xl h-full border border-white/5 hover:border-[var(--color-primary)]/30 transition-all duration-500 flex flex-col">
+                    {/* Case Study Image */}
+                    <div className="aspect-video w-full rounded-2xl overflow-hidden mb-6 relative bg-black/20">
+                         {study.case_study_image ? (
+                             // eslint-disable-next-line @next/next/no-img-element
+                             <img 
+                                src={study.case_study_image} 
+                                alt={study.title} 
+                                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" 
+                             />
+                         ) : (
+                             <ImagePlaceholder text="Case Study Image" />
+                         )}
+                         <div className="absolute top-4 right-4">
+                            <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] bg-black/50 backdrop-blur-md border border-[var(--color-primary)]/20 px-3 py-1 rounded-full">
+                                {study.category}
+                            </span>
+                         </div>
                     </div>
-                    <div>
-                      <div className="h-px w-full bg-gradient-to-r from-white/10 to-transparent my-4" />
-                      {study.results?.[0] && (
-                        <p className="text-[var(--color-text-secondary)] font-medium">
-                          <span className="text-white font-bold">{study.results[0].value}</span> {study.results[0].label}
-                        </p>
-                      )}
+
+                    <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                            <div className="flex items-start justify-between mb-4">
+                                <h3 className="text-2xl font-bold text-white font-[family-name:var(--font-heading)] group-hover:text-[var(--color-primary)] transition-colors">
+                                    {study.title}
+                                </h3>
+                                <ArrowUpRight className="text-[var(--color-text-muted)] group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all flex-shrink-0 mt-1" />
+                            </div>
+                            <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed mb-6 line-clamp-3">
+                                {study.description}
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <div className="h-px w-full bg-gradient-to-r from-white/10 to-transparent my-4" />
+                            {study.results?.[0] && (
+                                <p className="text-[var(--color-text-secondary)] font-medium">
+                                <span className="text-white font-bold">{study.results[0].value}</span> {study.results[0].label}
+                                </p>
+                            )}
+                        </div>
                     </div>
                   </div>
                 </StaggerItem>

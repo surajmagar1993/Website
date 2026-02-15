@@ -1,4 +1,6 @@
-import { Rocket, Eye, Clock, Lightbulb, Users, Shield, TrendingUp } from "lucide-react";
+import { Rocket, Eye, Clock, Lightbulb, Users, Shield, TrendingUp, Linkedin, Twitter } from "lucide-react";
+import { getSiteSettings } from "@/lib/settings";
+import ImagePlaceholder from "@/components/ui/ImagePlaceholder";
 
 const timeline = [
   { year: "2021", title: "Founded", desc: "Started in Pune with a mission to democratize IT solutions for growing businesses." },
@@ -15,7 +17,19 @@ const values = [
   { icon: <TrendingUp size={24} />, title: "Data Driven", desc: "Decisions backed by analytics, not assumptions." },
 ];
 
-export default function AboutPage() {
+const teamMembers = [
+    { name: "Amit Deshmukh", role: "Founder & CEO", image: null },
+    { name: "Sarah Johnson", role: "CTO", image: null },
+    { name: "Rahul Verma", role: "Head of Operations", image: null },
+    { name: "Priya Singh", role: "Lead Designer", image: null },
+];
+
+export const revalidate = 60;
+
+export default async function AboutPage() {
+  const settings = await getSiteSettings();
+  const teamPhoto = settings.team_photo;
+
   return (
     <>
       {/* Hero */}
@@ -23,19 +37,42 @@ export default function AboutPage() {
         <div className="orb orb-teal w-[400px] h-[400px] top-[-5%] right-[-10%]" />
         <div className="orb orb-amber w-[300px] h-[300px] bottom-[-10%] left-[-5%]" />
 
-        <div className="container mx-auto px-6 max-w-4xl">
-          <span className="text-[var(--color-primary)] font-[family-name:var(--font-heading)] text-sm uppercase tracking-[0.2em] font-medium fade-up">
-            About Us
-          </span>
-          <h1 className="font-[family-name:var(--font-heading)] text-4xl md:text-5xl lg:text-6xl font-bold text-white mt-4 mb-8 fade-up fade-up-delay-1">
-            Built to solve. <span className="glow-text">Driven to deliver.</span>
-          </h1>
-          <p className="text-[var(--color-text-secondary)] text-lg leading-relaxed fade-up fade-up-delay-2">
-            Founded in 2021 in Pune, India, Genesoft Infotech was born from a simple observation:
-            growing businesses struggle to access quality IT solutions without enterprise-scale budgets.
-            We bridge that gap. From a focused three-person team, we&apos;ve grown into a full-service
-            technology partner serving 500+ businesses across India.
-          </p>
+        <div className="container mx-auto px-6 max-w-6xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+                <span className="text-[var(--color-primary)] font-[family-name:var(--font-heading)] text-sm uppercase tracking-[0.2em] font-medium fade-up">
+                    About Us
+                </span>
+                <h1 className="font-[family-name:var(--font-heading)] text-4xl md:text-5xl lg:text-6xl font-bold text-white mt-4 mb-8 fade-up fade-up-delay-1">
+                    Built to solve. <br/><span className="glow-text">Driven to deliver.</span>
+                </h1>
+                <p className="text-[var(--color-text-secondary)] text-lg leading-relaxed fade-up fade-up-delay-2 mb-8">
+                    Founded in 2021 in Pune, India, Genesoft Infotech was born from a simple observation:
+                    growing businesses struggle to access quality IT solutions without enterprise-scale budgets.
+                    We bridge that gap. From a focused three-person team, we&apos;ve grown into a full-service
+                    technology partner serving 500+ businesses across India.
+                </p>
+            </div>
+            <div className="fade-up fade-up-delay-3">
+                 <div className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative group">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
+                     {teamPhoto ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img 
+                            src={teamPhoto} 
+                            alt="Genesoft Infotech Team" 
+                            className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700"
+                        />
+                     ) : (
+                        <ImagePlaceholder height="400px" text="Team Photo Placeholder" />
+                     )}
+                     <div className="absolute bottom-6 left-6 z-20">
+                         <p className="text-white font-bold text-lg">The Genesoft Team</p>
+                         <p className="text-[var(--color-text-muted)] text-sm">Pune Headquarters, 2025</p>
+                     </div>
+                 </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -43,7 +80,7 @@ export default function AboutPage() {
       <section className="py-20 relative">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="glass rounded-2xl p-10 gradient-border">
+            <div className="glass rounded-2xl p-10 gradient-border hover:bg-white/5 transition-colors">
               <div className="text-[var(--color-primary)] mb-4"><Rocket size={28} /></div>
               <h3 className="font-[family-name:var(--font-heading)] text-xl font-bold text-white mb-4">Our Mission</h3>
               <p className="text-[var(--color-text-secondary)] leading-relaxed">
@@ -51,7 +88,7 @@ export default function AboutPage() {
                 empowering businesses of every size to compete with cutting-edge technology.
               </p>
             </div>
-            <div className="glass rounded-2xl p-10 gradient-border">
+            <div className="glass rounded-2xl p-10 gradient-border hover:bg-white/5 transition-colors">
               <div className="text-[var(--color-accent)] mb-4"><Eye size={28} /></div>
               <h3 className="font-[family-name:var(--font-heading)] text-xl font-bold text-white mb-4">Our Vision</h3>
               <p className="text-[var(--color-text-secondary)] leading-relaxed">
@@ -61,6 +98,43 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Team Section */}
+      <section className="py-20 bg-black/20">
+          <div className="container mx-auto px-6">
+              <div className="text-center mb-16">
+                <span className="text-[var(--color-primary)] font-[family-name:var(--font-heading)] text-sm uppercase tracking-[0.2em] font-medium">
+                    Our People
+                </span>
+                <h2 className="font-[family-name:var(--font-heading)] text-3xl md:text-4xl font-bold text-white mt-3">
+                    Meet the leadership.
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {teamMembers.map((member, i) => (
+                      <div key={i} className="group relative overflow-hidden rounded-2xl">
+                          <div className="aspect-[4/5] bg-white/5">
+                              {member.image ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                              ) : (
+                                  <ImagePlaceholder text={member.name} />
+                              )}
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
+                              <h3 className="text-white font-bold text-lg">{member.name}</h3>
+                              <p className="text-[var(--color-primary)] text-sm mb-3">{member.role}</p>
+                              <div className="flex gap-3">
+                                  <a href="#" className="text-white/70 hover:text-white" aria-label={`LinkedIn profile of ${member.name}`}><Linkedin size={18} /></a>
+                                  <a href="#" className="text-white/70 hover:text-white" aria-label={`Twitter profile of ${member.name}`}><Twitter size={18} /></a>
+                              </div>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+          </div>
       </section>
 
       {/* Timeline */}
@@ -80,10 +154,10 @@ export default function AboutPage() {
             <div className="space-y-10">
               {timeline.map((item) => (
                 <div key={item.year} className="flex gap-6 group">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full glass-strong flex items-center justify-center border border-[var(--color-primary)]/30 z-10">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full glass-strong flex items-center justify-center border border-[var(--color-primary)]/30 z-10 bg-[var(--color-bg)]">
                     <Clock size={14} className="text-[var(--color-primary)]" />
                   </div>
-                  <div className="glass rounded-xl p-6 flex-1 group-hover:border-[var(--color-primary)]/30 transition-all duration-300">
+                  <div className="glass rounded-xl p-6 flex-1 group-hover:border-[var(--color-primary)]/30 transition-all duration-300 hover:translate-x-2">
                     <span className="glow-text font-[family-name:var(--font-heading)] text-sm font-bold">{item.year}</span>
                     <h3 className="font-[family-name:var(--font-heading)] text-lg font-bold text-white mt-1 mb-2">{item.title}</h3>
                     <p className="text-[var(--color-text-secondary)] text-sm">{item.desc}</p>

@@ -35,6 +35,16 @@ export interface SiteSettings {
   recaptcha_site_key?: string;
   recaptcha_secret_key?: string;
   google_analytics_id?: string;
+  
+  /* Trust Indicators (Hero Counters) */
+  trust_badge_1_value?: string;
+  trust_badge_1_label?: string;
+  trust_badge_2_value?: string;
+  trust_badge_2_label?: string;
+  trust_badge_3_value?: string;
+  trust_badge_3_label?: string;
+  /* Img Assets */
+  team_photo?: string;
   [key: string]: string | undefined;
 }
 

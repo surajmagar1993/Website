@@ -20,6 +20,8 @@ interface Service {
   subtitle: string;
   description: string;
   icon: string;
+  image_url?: string;
+  case_study_image?: string;
   display_order: number;
   features: string[];
   technologies: string[];
@@ -37,6 +39,8 @@ const emptyService = {
   subtitle: "",
   description: "",
   icon: "Globe",
+  image_url: "",
+  case_study_image: "",
   display_order: 0,
   features: [] as string[],
   technologies: [] as string[],
@@ -83,6 +87,8 @@ export default function ServicesPage() {
         subtitle: service.subtitle || "",
         description: service.description || "",
         icon: service.icon || "Globe",
+        image_url: service.image_url || "",
+        case_study_image: service.case_study_image || "",
         display_order: service.display_order || 0,
         features: service.features || [],
         technologies: service.technologies || [],
@@ -248,19 +254,19 @@ export default function ServicesPage() {
       {/* ═══ EDIT MODAL ═══ */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={closeModal}>
-            <div className="bg-[var(--color-surface)] border border-white/10 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-[var(--color-surface)] border border-white/10 rounded-2xl w-full md:max-w-3xl h-full md:h-auto md:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
                 {/* Modal Header */}
-                <div className="p-5 border-b border-white/10 flex items-center justify-between flex-shrink-0">
-                    <h2 className="text-xl font-bold text-white">
+                <div className="p-4 md:p-5 border-b border-white/10 flex items-center justify-between flex-shrink-0">
+                    <h2 className="text-lg md:text-xl font-bold text-white">
                         {editingService ? 'Edit Service' : 'Add New Service'}
                     </h2>
-                    <button onClick={closeModal} className="text-[var(--color-text-muted)] hover:text-white transition-colors" aria-label="Close Service Modal">
+                    <button onClick={closeModal} className="text-[var(--color-text-muted)] hover:text-white transition-colors p-1" aria-label="Close Service Modal">
                         <X size={24} />
                     </button>
                 </div>
 
                 {/* Modal Tabs */}
-                <div className="flex gap-1 px-5 pt-4 border-b border-white/10 flex-shrink-0 overflow-x-auto">
+                <div className="flex gap-1 px-4 md:px-5 pt-4 border-b border-white/10 flex-shrink-0 overflow-x-auto custom-scrollbar">
                     {[
                       { id: "basic", label: "Basic Info" },
                       { id: "content", label: "Features & Tech" },
@@ -274,7 +280,7 @@ export default function ServicesPage() {
                         <button 
                             key={tab.id}
                             onClick={() => setActiveFormTab(tab.id)}
-                            className={`px-4 py-2.5 text-sm font-medium transition-all rounded-t-lg whitespace-nowrap ${activeFormTab === tab.id ? 'bg-white/10 text-white border-b-2 border-[var(--color-primary)]' : 'text-[var(--color-text-muted)] hover:text-white hover:bg-white/5'}`}
+                            className={`px-3 md:px-4 py-2.5 text-xs md:text-sm font-medium transition-all rounded-t-lg whitespace-nowrap flex-shrink-0 ${activeFormTab === tab.id ? 'bg-white/10 text-white border-b-2 border-[var(--color-primary)]' : 'text-[var(--color-text-muted)] hover:text-white hover:bg-white/5'}`}
                         >
                             {tab.label}
                         </button>
@@ -296,11 +302,17 @@ export default function ServicesPage() {
                             <FieldInput label="Subtitle" value={formData.subtitle} onChange={v => setFormData(p => ({ ...p, subtitle: v }))} placeholder="Short compelling tagline" />
                             <FieldTextarea label="Description" value={formData.description} onChange={v => setFormData(p => ({ ...p, description: v }))} placeholder="Full description of the service..." />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="space-y-2">
-                                        <ImageUpload 
-                                            label="Service Icon/Logo" 
+                                    <div className="space-y-4">
+                                        <FieldInput 
+                                            label="Lucide Icon Name" 
                                             value={formData.icon} 
-                                            onChange={url => setFormData(p => ({ ...p, icon: url }))} 
+                                            onChange={v => setFormData(p => ({ ...p, icon: v }))} 
+                                            placeholder="e.g. Globe, Code, Database"
+                                        />
+                                        <ImageUpload 
+                                            label="Service Cover Image" 
+                                            value={formData.image_url || ""} 
+                                            onChange={url => setFormData(p => ({ ...p, image_url: url }))} 
                                             folder="services"
                                         />
                                     </div>
@@ -420,24 +432,38 @@ export default function ServicesPage() {
 
                     {/* ─── CASE STUDIES ─── */}
                     {activeFormTab === "casestudies" && (
-                        <DynamicList
-                            label="Case Study Results"
-                            items={formData.case_study_results}
-                            onChange={items => setFormData(p => ({ ...p, case_study_results: items }))}
-                            renderItem={(item, i, update) => (
-                                <div className="space-y-3">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        <FieldInput label={`Case Study ${i+1} Title`} value={item.title} onChange={v => update({ ...item, title: v })} placeholder="e.g. E-Commerce Platform" />
-                                        <FieldInput label="Industry" value={item.industry} onChange={v => update({ ...item, industry: v })} placeholder="e.g. Retail / Fashion" />
+                        <div className="space-y-6">
+                             <div className="bg-black/20 p-4 rounded-xl border border-white/10">
+                                <ImageUpload 
+                                    label="Case Study Main Image (Dashboard Screenshot)" 
+                                    value={formData.case_study_image || ""} 
+                                    onChange={url => setFormData(p => ({ ...p, case_study_image: url }))} 
+                                    folder="case-studies"
+                                />
+                                <p className="text-xs text-[var(--color-text-muted)] mt-2">
+                                    Upload a high-quality screenshot of the dashboard or app built for this service case study.
+                                </p>
+                            </div>
+
+                            <DynamicList
+                                label="Case Study Results"
+                                items={formData.case_study_results}
+                                onChange={items => setFormData(p => ({ ...p, case_study_results: items }))}
+                                renderItem={(item, i, update) => (
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <FieldInput label={`Case Study ${i+1} Title`} value={item.title} onChange={v => update({ ...item, title: v })} placeholder="e.g. E-Commerce Platform" />
+                                            <FieldInput label="Industry" value={item.industry} onChange={v => update({ ...item, industry: v })} placeholder="e.g. Retail / Fashion" />
+                                        </div>
+                                        <MetricsList 
+                                            metrics={item.metrics}
+                                            onChange={metrics => update({ ...item, metrics })}
+                                        />
                                     </div>
-                                    <MetricsList 
-                                        metrics={item.metrics}
-                                        onChange={metrics => update({ ...item, metrics })}
-                                    />
-                                </div>
-                            )}
-                            newItem={() => ({ title: "", industry: "", metrics: [{ label: "", value: "" }] })}
-                        />
+                                )}
+                                newItem={() => ({ title: "", industry: "", metrics: [{ label: "", value: "" }] })}
+                            />
+                        </div>
                     )}
                 </div>
 

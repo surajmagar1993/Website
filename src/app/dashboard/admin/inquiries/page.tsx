@@ -80,7 +80,7 @@ export default function InquiriesPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-200px)]">
             {/* List */}
-            <div className="lg:col-span-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+            <div className={`lg:col-span-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar ${selectedInquiry ? 'hidden lg:block' : 'block'}`}>
                 {loading ? (
                     <div className="text-[var(--color-text-muted)] text-center py-8">Loading...</div>
                 ) : inquiries.length === 0 ? (
@@ -121,23 +121,29 @@ export default function InquiriesPage() {
             </div>
 
             {/* Detail View */}
-            <div className="lg:col-span-2 h-full">
+            <div className={`lg:col-span-2 h-full ${selectedInquiry ? 'block' : 'hidden lg:block'}`}>
                 {selectedInquiry ? (
-                    <div className="glass p-8 rounded-2xl h-full flex flex-col border border-white/5">
-                        <div className="flex justify-between items-start mb-8 border-b border-white/10 pb-6">
+                    <div className="glass p-5 md:p-8 rounded-2xl h-full flex flex-col border border-white/5">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between mb-6 md:mb-8 border-b border-white/10 pb-6 gap-4">
                             <div>
-                                <h2 className="text-3xl font-bold text-white mb-2 font-[family-name:var(--font-heading)]">{selectedInquiry.name}</h2>
-                                <p className="text-[var(--color-primary)] text-lg flex items-center gap-2">
+                                <button 
+                                    onClick={() => setSelectedInquiry(null)}
+                                    className="lg:hidden mb-4 flex items-center gap-2 text-[var(--color-text-muted)] hover:text-white text-sm"
+                                >
+                                    <ArrowLeft size={16} /> Back to List
+                                </button>
+                                <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 font-[family-name:var(--font-heading)]">{selectedInquiry.name}</h2>
+                                <p className="text-[var(--color-primary)] text-base md:text-lg flex items-center gap-2">
                                     Inquiry for: <span className="font-bold">{selectedInquiry.service}</span>
                                 </p>
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 self-end md:self-auto">
                                 {selectedInquiry.status === 'new' && (
                                     <button 
                                         onClick={() => handleStatusUpdate(selectedInquiry.id, 'read')}
                                         className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 rounded-xl text-sm transition-colors flex items-center gap-2 font-bold"
                                     >
-                                        <CheckCircle size={16} /> Mark Read
+                                        <CheckCircle size={16} /> <span className="hidden md:inline">Mark Read</span>
                                     </button>
                                 )}
                                     <button 
@@ -150,20 +156,20 @@ export default function InquiriesPage() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-8 mb-8 bg-white/5 p-6 rounded-xl border border-white/5">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-8 bg-white/5 p-4 md:p-6 rounded-xl border border-white/5">
                             <div>
                                 <label className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-bold mb-1 block">Email Address</label>
-                                <p className="text-white text-lg"><a href={`mailto:${selectedInquiry.email}`} className="hover:text-[var(--color-primary)] transition-colors">{selectedInquiry.email}</a></p>
+                                <p className="text-white text-base md:text-lg"><a href={`mailto:${selectedInquiry.email}`} className="hover:text-[var(--color-primary)] transition-colors break-all">{selectedInquiry.email}</a></p>
                             </div>
                             <div>
                                 <label className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-bold mb-1 block">Phone Number</label>
-                                <p className="text-white text-lg">{selectedInquiry.phone || 'Not provided'}</p>
+                                <p className="text-white text-base md:text-lg">{selectedInquiry.phone || 'Not provided'}</p>
                             </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto">
                             <label className="text-xs text-[var(--color-text-muted)] uppercase tracking-wider font-bold mb-3 block">Message Content</label>
-                            <div className="bg-black/20 p-8 rounded-xl text-white/90 whitespace-pre-wrap leading-relaxed shadow-inner border border-black/20 text-lg">
+                            <div className="bg-black/20 p-5 md:p-8 rounded-xl text-white/90 whitespace-pre-wrap leading-relaxed shadow-inner border border-black/20 text-base md:text-lg">
                                 {selectedInquiry.message}
                             </div>
                         </div>

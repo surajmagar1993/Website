@@ -99,6 +99,7 @@ export default function AdminSettingsPage() {
             <TabButton label="Branding" active={activeTab === 'branding'} onClick={() => setActiveTab('branding')} />
             <TabButton label="Social Media" active={activeTab === 'social'} onClick={() => setActiveTab('social')} />
             <TabButton label="Landing Page" active={activeTab === 'landing'} onClick={() => setActiveTab('landing')} />
+            <TabButton label="About Page" active={activeTab === 'about'} onClick={() => setActiveTab('about')} />
             <TabButton label="Integrations" active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} />
             <TabButton label="Sitemap" active={activeTab === 'sitemap'} onClick={() => setActiveTab('sitemap')} />
         </div>
@@ -248,6 +249,65 @@ export default function AdminSettingsPage() {
                         />
                      </div>
 
+
+                    {/* Trust Indicators */}
+                    <h3 className="text-xl font-bold text-white mt-10 mb-4 border-b border-white/10 pb-2">Trust Indicators (Counters)</h3>
+                    <p className="text-sm text-[var(--color-text-muted)] mb-6">Edit the stats shown below the main hero CTA.</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/5 p-6 rounded-xl border border-white/5 mb-6">
+                        <div className="col-span-full mb-2 border-b border-white/10 pb-2">
+                            <h4 className="font-bold text-white flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div> Badge 1 (Users/Clients)</h4>
+                        </div>
+                        <InputGroup 
+                            label="Value (e.g. 50+)" 
+                            value={settings.trust_badge_1_value} 
+                            onChange={(v) => handleChange('trust_badge_1_value', v)} 
+                            icon={<span className="text-lg font-bold">#</span>}
+                        />
+                        <InputGroup 
+                            label="Label (e.g. Businesses Served)" 
+                            value={settings.trust_badge_1_label} 
+                            onChange={(v) => handleChange('trust_badge_1_label', v)} 
+                            icon={<span className="text-lg font-bold">Tt</span>}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/5 p-6 rounded-xl border border-white/5 mb-6">
+                        <div className="col-span-full mb-2 border-b border-white/10 pb-2">
+                            <h4 className="font-bold text-white flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-orange-500"></div> Badge 2 (Projects/Work)</h4>
+                        </div>
+                        <InputGroup 
+                            label="Value (e.g. 200+)" 
+                            value={settings.trust_badge_2_value} 
+                            onChange={(v) => handleChange('trust_badge_2_value', v)} 
+                            icon={<span className="text-lg font-bold">#</span>}
+                        />
+                        <InputGroup 
+                            label="Label (e.g. Projects Delivered)" 
+                            value={settings.trust_badge_2_label} 
+                            onChange={(v) => handleChange('trust_badge_2_label', v)} 
+                            icon={<span className="text-lg font-bold">Tt</span>}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white/5 p-6 rounded-xl border border-white/5">
+                        <div className="col-span-full mb-2 border-b border-white/10 pb-2">
+                            <h4 className="font-bold text-white flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-white"></div> Badge 3 (Location/Team)</h4>
+                        </div>
+                        <InputGroup 
+                            label="Value (e.g. Pune)" 
+                            value={settings.trust_badge_3_value} 
+                            onChange={(v) => handleChange('trust_badge_3_value', v)} 
+                            icon={<span className="text-lg font-bold">#</span>}
+                        />
+                        <InputGroup 
+                            label="Label (e.g. Based Company)" 
+                            value={settings.trust_badge_3_label} 
+                            onChange={(v) => handleChange('trust_badge_3_label', v)} 
+                            icon={<span className="text-lg font-bold">Tt</span>}
+                        />
+                    </div>
+
                     {/* Section Labels */}
                     <h3 className="text-xl font-bold text-white mt-10 mb-4 border-b border-white/10 pb-2">Section Labels</h3>
                     <p className="text-sm text-[var(--color-text-muted)] mb-6">Edit the labels and headings for each homepage section.</p>
@@ -377,6 +437,39 @@ export default function AdminSettingsPage() {
                             value={settings.google_analytics_id} 
                             onChange={(v) => handleChange('google_analytics_id', v)} 
                             icon={<span className="text-lg font-bold">GA</span>}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'about' && (
+                <div className="space-y-6 max-w-3xl">
+                    <h3 className="text-xl font-bold text-white mb-4 border-b border-white/10 pb-2">About Page Configuration</h3>
+                    
+                    <div className="mb-6">
+                        <ImageUpload 
+                            label="Our Team Photo" 
+                            value={settings.team_photo} 
+                            onChange={(url) => handleChange('team_photo', url)} 
+                            folder="about"
+                        />
+                        <p className="text-xs text-[var(--color-text-muted)] mt-2">
+                            A high-quality photo of your team or office to be displayed on the About page.
+                        </p>
+                    </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <InputGroup 
+                            label="Years of Experience" 
+                            value={settings.about_stats_years} 
+                            onChange={(v) => handleChange('about_stats_years', v)} 
+                            icon={<span className="text-lg font-bold">#</span>}
+                        />
+                        <InputGroup 
+                            label="Projects Completed" 
+                            value={settings.about_stats_projects} 
+                            onChange={(v) => handleChange('about_stats_projects', v)} 
+                            icon={<span className="text-lg font-bold">#</span>}
                         />
                     </div>
                 </div>

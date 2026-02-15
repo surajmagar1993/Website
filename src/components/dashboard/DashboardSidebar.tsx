@@ -92,12 +92,12 @@ export default function DashboardSidebar({ userRole }: DashboardSidebarProps) {
 
       {/* Sidebar Container */}
       <aside className={`
-        fixed top-0 bottom-0 left-0 z-50 transition-all duration-300 ease-in-out
-        bg-[var(--color-bg)] h-full
-        ${mobileMenuOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'}
+        fixed top-0 bottom-0 left-0 z-50 transition-transform duration-300 ease-in-out
+        bg-[var(--color-bg)] h-full w-64 border-r border-white/5 shadow-2xl md:shadow-none
+        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         ${collapsed ? 'md:w-20' : 'md:w-64'}
       `}>
-        <div className="flex flex-col h-full bg-[var(--color-surface)] border-r border-white/5">
+        <div className="flex flex-col h-full bg-[var(--color-surface)]">
           {/* Logo Area */}
           <div className={`p-6 flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
             {!collapsed && (

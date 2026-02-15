@@ -42,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-[var(--color-bg)] flex">
       <DashboardSidebar userRole={role} />
-      <main className="flex-1 p-8 md:ml-64 transition-all duration-300">
+      <main className="flex-1 p-4 md:p-8 md:ml-64 transition-all duration-300">
         {children}
       </main>
     </div>

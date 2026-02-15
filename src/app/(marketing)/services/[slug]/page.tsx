@@ -17,6 +17,8 @@ interface Service {
   subtitle: string;
   icon: string;
   description: string;
+  image_url?: string;
+  case_study_image?: string;
   features: string[];
   technologies: string[];
   process: ServiceStep[];
@@ -65,40 +67,63 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
   return (
     <>
       {/* ═══ SECTION 1: SERVICE HERO ═══ */}
-      <section className="pt-40 pb-20 relative overflow-hidden">
+      <section className="pt-32 pb-20 relative overflow-hidden">
         <div className="orb orb-orange w-[400px] h-[400px] top-[-10%] right-[-10%]" />
         <div className="orb orb-amber w-[300px] h-[300px] bottom-[-10%] left-[-5%]" />
 
-        <div className="container mx-auto px-6 max-w-4xl">
-          <Link href="/services" className="inline-flex items-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] text-sm mb-8 transition-colors">
+        <div className="container mx-auto px-6">
+          <Link href="/services" className="inline-flex items-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-primary)] text-sm mb-8 transition-colors relative z-10">
             <ArrowLeft size={16} /> All Services
           </Link>
 
-          <h1 className="font-[family-name:var(--font-heading)] text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 fade-up">
-            {service.title} <span className="glow-text">Services</span>
-          </h1>
-          <p className="text-[var(--color-text-secondary)] text-lg md:text-xl leading-relaxed mb-10 fade-up fade-up-delay-1">
-            {service.subtitle}
-          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="relative z-10">
+                <h1 className="font-[family-name:var(--font-heading)] text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 fade-up">
+                    {service.title} <span className="glow-text">Services</span>
+                </h1>
+                <p className="text-[var(--color-text-secondary)] text-lg md:text-xl leading-relaxed mb-10 fade-up fade-up-delay-1">
+                    {service.subtitle}
+                </p>
 
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-10 fade-up fade-up-delay-2">
-            <Link href="/contact" className="btn-primary inline-flex items-center gap-2 justify-center">
-              Get Started <ArrowRight size={18} />
-            </Link>
-            <Link href="/contact" className="btn-outline inline-flex items-center gap-2 justify-center">
-              View Pricing
-            </Link>
-          </div>
+                {/* CTAs */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-10 fade-up fade-up-delay-2">
+                    <Link href="/contact" className="btn-primary inline-flex items-center gap-2 justify-center">
+                    Get Started <ArrowRight size={18} />
+                    </Link>
+                    <Link href="/contact" className="btn-outline inline-flex items-center gap-2 justify-center">
+                    View Pricing
+                    </Link>
+                </div>
 
-          {/* Key highlights */}
-          <div className="flex flex-wrap gap-4 fade-up fade-up-delay-3">
-            {service.features.slice(0, 3).map((feature) => (
-              <div key={feature} className="flex items-center gap-2 text-[var(--color-text-secondary)]">
-                <CheckCircle size={16} className="text-[var(--color-primary)] flex-shrink-0" />
-                <span className="text-sm">{feature}</span>
-              </div>
-            ))}
+                {/* Key highlights */}
+                <div className="flex flex-wrap gap-4 fade-up fade-up-delay-3">
+                    {service.features.slice(0, 3).map((feature) => (
+                    <div key={feature} className="flex items-center gap-2 text-[var(--color-text-secondary)]">
+                        <CheckCircle size={16} className="text-[var(--color-primary)] flex-shrink-0" />
+                        <span className="text-sm">{feature}</span>
+                    </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Hero Image */}
+            <div className="relative fade-up fade-up-delay-2">
+                <div className="aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl relative group">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+                    {service.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img 
+                            src={service.image_url} 
+                            alt={`${service.title} Services`} 
+                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                             <span className="text-white/20 font-bold text-xl">{service.title}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
           </div>
         </div>
       </section>
@@ -226,7 +251,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
       </section>
 
       {/* ═══ SECTION 6: CASE STUDY / RESULTS ═══ */}
-      {caseStudyResults.length > 0 && (
+      {(caseStudyResults.length > 0 || service.case_study_image) && (
         <section className="py-20 relative bg-black/20">
           <div className="container mx-auto px-6">
             <div className="text-center mb-12">
@@ -238,23 +263,37 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               </h2>
             </div>
  
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {caseStudyResults.map((cs) => (
-                <div key={cs.title} className="glass rounded-2xl p-8 hover:border-[var(--color-primary)]/30 transition-all">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] border border-[var(--color-primary)]/20 px-3 py-1 rounded-full">
-                    {cs.industry}
-                  </span>
-                  <h3 className="text-xl font-bold text-white mt-4 mb-6 font-[family-name:var(--font-heading)]">{cs.title}</h3>
-                  <div className="space-y-4">
-                    {cs.metrics.map((metric) => (
-                      <div key={metric.label} className="flex items-center gap-3">
-                        <span className="glow-text font-[family-name:var(--font-heading)] font-bold text-xl min-w-[60px]">{metric.value}</span>
-                        <span className="text-[var(--color-text-secondary)] text-sm">{metric.label}</span>
-                      </div>
-                    ))}
-                  </div>
+            <div className="max-w-4xl mx-auto">
+               {/* Case Study Image */}
+               {service.case_study_image && (
+                   <div className="mb-12 rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                       {/* eslint-disable-next-line @next/next/no-img-element */}
+                       <img 
+                            src={service.case_study_image} 
+                            alt={`${service.title} Case Study`} 
+                            className="w-full h-auto"
+                        />
+                   </div>
+               )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {caseStudyResults.map((cs) => (
+                    <div key={cs.title} className="glass rounded-2xl p-8 hover:border-[var(--color-primary)]/30 transition-all">
+                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] border border-[var(--color-primary)]/20 px-3 py-1 rounded-full">
+                        {cs.industry}
+                    </span>
+                    <h3 className="text-xl font-bold text-white mt-4 mb-6 font-[family-name:var(--font-heading)]">{cs.title}</h3>
+                    <div className="space-y-4">
+                        {cs.metrics.map((metric) => (
+                        <div key={metric.label} className="flex items-center gap-3">
+                            <span className="glow-text font-[family-name:var(--font-heading)] font-bold text-xl min-w-[60px]">{metric.value}</span>
+                            <span className="text-[var(--color-text-secondary)] text-sm">{metric.label}</span>
+                        </div>
+                        ))}
+                    </div>
+                    </div>
+                ))}
                 </div>
-              ))}
             </div>
           </div>
         </section>
