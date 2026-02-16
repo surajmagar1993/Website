@@ -1,23 +1,40 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getDashboardStats } from "@/actions/analytics"; // We just created this
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { TableSkeleton } from "@/components/ui/Skeletons";
+import { getDashboardStats } from "@/actions/analytics";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Users, Package, Ticket, HardDrive, TrendingUp, AlertCircle } from "lucide-react";
+import { Users, Ticket, HardDrive, TrendingUp, AlertCircle } from "lucide-react";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
+interface ActivityLog {
+  id: string;
+  action: string;
+  created_at: string;
+  details: Record<string, unknown>;
+  profiles: { email: string }[] | null;
+}
+
+interface DashboardStats {
+  products: { total: number; rented: number; available: number };
+  tickets: { total: number; open: number; closed: number };
+  clients: { total: number };
+  recentActivity: ActivityLog[];
+}
+
 export default function AdminOverview() {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchStats() {
       try {
         const data = await getDashboardStats();
-        setStats(data);
+        // The data returned from the server action matches the shape we expect, 
+        // but we need to cast it or ensure the server action return type is explicit.
+        // For now, we trust the shape matches.
+        setStats(data as unknown as DashboardStats);
       } catch (error) {
         console.error("Failed to fetch dashboard stats", error);
       } finally {
@@ -118,11 +135,11 @@ export default function AdminOverview() {
              </ResponsiveContainer>
              <div className="flex justify-center gap-6 mt-4">
                 <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[0] }} />
+                    <div className="w-3 h-3 rounded-full bg-[#0088FE]" />
                     <span className="text-sm text-gray-400">Rented ({stats.products.rented})</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[1] }} />
+                    <div className="w-3 h-3 rounded-full bg-[#00C49F]" />
                     <span className="text-sm text-gray-400">Available ({stats.products.available})</span>
                 </div>
              </div>
@@ -138,7 +155,7 @@ export default function AdminOverview() {
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={ticketData}>
-                <CartesianGrid strokeDasharray="3 3" getattr={{ stroke: "#ffffff10" } as any} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                 <XAxis dataKey="name" stroke="#888888" />
                 <YAxis stroke="#888888" />
                 <Tooltip 
@@ -161,7 +178,7 @@ export default function AdminOverview() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-                {stats.recentActivity.map((log: any) => (
+                {stats.recentActivity.map((log) => (
                     <div key={log.id} className="flex items-center justify-between p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-colors border border-white/5">
                         <div className="flex items-center gap-4">
                             <div className={`p-2 rounded-full ${getActionColor(log.action)}`}>
@@ -169,7 +186,7 @@ export default function AdminOverview() {
                             </div>
                             <div>
                                 <p className="font-medium capitalize text-white">{formatAction(log.action)}</p>
-                                <p className="text-sm text-gray-400">by {log.profiles?.email || 'Unknown'}</p>
+                                <p className="text-sm text-gray-400">by {log.profiles?.[0]?.email || 'Unknown'}</p>
                             </div>
                         </div>
                         <span className="text-xs text-gray-500">
@@ -185,7 +202,7 @@ export default function AdminOverview() {
   );
 }
 
-function StatCard({ title, value, icon, trend }: { title: string, value: string | number, icon: any, trend: string }) {
+function StatCard({ title, value, icon, trend }: { title: string, value: string | number, icon: React.ReactNode, trend: string }) {
   return (
     <Card className="glass border-white/10 bg-black/20 text-white">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
