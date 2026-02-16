@@ -9,6 +9,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { sendTicketReceiptEmail } from "@/actions/tickets";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { CardSkeleton } from "@/components/ui/Skeletons";
 
 interface Product {
   id: string;

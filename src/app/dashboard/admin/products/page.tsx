@@ -6,6 +6,9 @@ import { Search, Plus, Edit, Trash2, Package, ArrowLeft, Monitor, Loader2, FileS
 import Link from "next/link";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { TableSkeleton } from "@/components/ui/Skeletons";
+import { createProduct, updateProduct, deleteProduct, ProductFormData } from "@/actions/products";
+import { toast } from "sonner";
 
 interface Product {
   id: string;
@@ -104,15 +107,28 @@ export default function AdminProductsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingId) {
-       await supabase.from("products").update(formData).eq("id", editingId);
-    } else {
-       await supabase.from("products").insert(formData);
+    try {
+        let result;
+        if (editingId) {
+           result = await updateProduct(editingId, formData as ProductFormData);
+        } else {
+           result = await createProduct(formData as ProductFormData);
+        }
+
+        if (result.success) {
+            toast.success(editingId ? "Product updated" : "Product created");
+            setShowForm(false);
+            setEditingId(null);
+            setFormData({ name: "", category: categories[0]?.name || "", serial_number: "", model: "", status: "available" });
+            fetchProducts(); 
+        } else {
+            toast.error("Operation failed");
+            console.error(result.error);
+        }
+    } catch (e) {
+        console.error(e);
+        toast.error("An unexpected error occurred");
     }
-    setShowForm(false);
-    setEditingId(null);
-    setFormData({ name: "", category: categories[0]?.name || "", serial_number: "", model: "", status: "available" });
-    fetchProducts();
   };
 
   const handleEdit = (product: Product) => {
@@ -129,9 +145,16 @@ export default function AdminProductsPage() {
 
   const CONFIRM_DELETE = async () => {
     if (!showDeleteConfirm) return;
-    await supabase.from("products").delete().eq("id", showDeleteConfirm);
-    setShowDeleteConfirm(null);
-    fetchProducts();
+    
+    const result = await deleteProduct(showDeleteConfirm);
+    
+    if (result.success) {
+        toast.success("Product deleted");
+        setShowDeleteConfirm(null);
+        fetchProducts();
+    } else {
+        toast.error("Failed to delete product");
+    }
   };
 
   const CONFIRM_RETURN = async () => {
@@ -574,7 +597,10 @@ export default function AdminProductsPage() {
         )}
 
         {/* Product Table */}
-        <div className="glass rounded-xl border border-white/5 overflow-hidden">
+        {loading ? (
+          <TableSkeleton rows={10} columns={5} />
+        ) : (
+          <div className="glass rounded-xl border border-white/5 overflow-hidden">
             <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
@@ -714,6 +740,7 @@ export default function AdminProductsPage() {
                 </div>
             )}
         </div>
+      )}
       </div>
     </div>
   );

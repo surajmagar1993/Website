@@ -1,19 +1,16 @@
 import { supabase } from "@/lib/supabase";
 import { getSiteSettings } from "@/lib/settings";
-import * as Icons from "lucide-react";
 import { GlowCard, StaggerItem, FadeIn, ParallaxOrb, StaggerContainer } from "@/components/Motion";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Users, Briefcase, MapPin, Phone, Mail, Clock } from "lucide-react";
 import { getPageSeo } from "@/lib/seo";
-import Image from "next/image";
 import { HyperText } from "@/components/ui/HyperText";
 import ImagePlaceholder from "@/components/ui/ImagePlaceholder";
+import ClientLogos from "@/components/ui/ClientLogos";
+import ServiceCard from "@/components/ui/ServiceCard";
+import ProcessStepCard from "@/components/ui/ProcessStepCard";
+import { DynamicIcon } from "@/components/ui/DynamicIcon";
 
-const DynamicIcon = ({ name }: { name: string }) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const Icon = (Icons as any)[name] || Icons.HelpCircle;
-  return <Icon size={32} />;
-};
 
 export async function generateMetadata() {
   return await getPageSeo('/');
@@ -45,42 +42,6 @@ const defaultProcessSteps: ProcessStep[] = [
   { step: 4, title: "Launch & Support", description: "Go live with training, monitoring & ongoing support" },
 ];
 
-/* Client Logos Component */
-async function ClientLogos() {
-  const { data: clients } = await supabase
-    .from('profiles')
-    .select('id, full_name, logo_url')
-    .eq('role', 'client')
-    .not('logo_url', 'is', null)
-    .order('created_at', { ascending: false });
-
-  if (!clients || clients.length === 0) return null;
-
-  const displayClients = [...clients, ...clients];
-
-  return (
-    <div className="relative overflow-hidden mt-12">
-      <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[var(--color-bg)] to-transparent z-10" />
-      <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-[var(--color-bg)] to-transparent z-10" />
-      <div className="logo-carousel hover:pause">
-        {displayClients.map((client, i) => (
-          <div
-            key={`${client.id}-${i}`}
-            className="mx-6 flex-shrink-0 flex items-center justify-center min-w-[140px] h-20 group cursor-pointer"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={client.logo_url}
-              alt={client.full_name}
-              className="max-h-12 w-auto object-contain transition-transform group-hover:scale-110"
-              title={client.full_name}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export default async function HomePage() {
   const settings = await getSiteSettings();
@@ -240,37 +201,7 @@ export default async function HomePage() {
             ) : (
               services.map((service) => (
                 <StaggerItem key={service.id}>
-                  <Link href={`/services/${service.slug}`} className="block h-full group">
-                    <GlowCard className="h-full p-8 rounded-2xl flex flex-col relative overflow-hidden">
-                      {service.image_url ? (
-                        <div className="w-full h-48 mb-6 rounded-xl overflow-hidden relative group-hover:shadow-lg transition-all">
-                          <Image 
-                            src={service.image_url} 
-                            alt={service.title} 
-                            fill 
-                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full h-48 mb-6 rounded-xl overflow-hidden relative group-hover:shadow-lg transition-all">
-                           <ImagePlaceholder text={service.title} />
-                        </div>
-                      )}
-                      
-                      <div className="mb-4 text-[var(--color-primary)] bg-[var(--color-primary)]/10 w-fit p-3 rounded-lg relative z-10 transition-colors group-hover:bg-[var(--color-primary)] group-hover:text-black">
-                        <DynamicIcon name={service.icon || service.icon_name || 'Code2'} />
-                      </div>
-                      <h3 className="text-xl font-bold text-white mb-3 font-[family-name:var(--font-heading)] group-hover:text-[var(--color-primary)] transition-colors relative z-10">
-                        {service.title}
-                      </h3>
-                      <p className="text-[var(--color-text-muted)] leading-relaxed text-sm flex-1 relative z-10">
-                        {service.description}
-                      </p>
-                      <div className="mt-6 flex items-center gap-2 text-[var(--color-primary)] text-sm font-[family-name:var(--font-heading)] font-medium group-hover:gap-3 transition-all relative z-10">
-                        Learn More <ArrowRight size={16} />
-                      </div>
-                    </GlowCard>
-                  </Link>
+                  <ServiceCard service={service} />
                 </StaggerItem>
               ))
             )}
@@ -293,24 +224,13 @@ export default async function HomePage() {
           </FadeIn>
 
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {dynamicProcessSteps.map((step: ProcessStep, i: number) => (
-              <StaggerItem key={step.title}>
-                <div className="glass rounded-2xl p-8 h-full relative group hover:border-[var(--color-primary)]/30 transition-all">
-                  {/* Step number */}
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-accent)] flex items-center justify-center mb-6">
-                    <span className="text-white font-[family-name:var(--font-heading)] font-bold text-lg">{step.step}</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-3 font-[family-name:var(--font-heading)]">{step.title}</h3>
-                  <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed">{step.description}</p>
- 
-                  {/* Arrow connector (hidden on last item and mobile) */}
-                  {i < dynamicProcessSteps.length - 1 && (
-                    <div className="hidden lg:block absolute top-1/2 -right-3 transform -translate-y-1/2 z-10">
-                      <ArrowRight size={20} className="text-[var(--color-primary)]/50" />
-                    </div>
-                  )}
-                </div>
-              </StaggerItem>
+            {dynamicProcessSteps.map((step: ProcessStep) => (
+              <ProcessStepCard 
+                key={step.step}
+                step={step.step}
+                title={step.title}
+                description={step.description}
+              />
             ))}
           </StaggerContainer>
         </div>
