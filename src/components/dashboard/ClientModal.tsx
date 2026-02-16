@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Save, Shield, User, Mail, Building, Edit2, UserPlus, Globe } from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
+import { toShadowEmail, fromShadowEmail } from "@/lib/constants";
 
 interface Profile {
   id: string;
@@ -86,15 +87,15 @@ export default function ClientModal({ isOpen, onClose, onSave, editingProfile, s
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold ml-1">User ID (Email)</label>
+                        <label className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold ml-1">Username or Email</label>
                         <div className="relative">
                             <Mail size={16} className="absolute left-4 top-3.5 text-[var(--color-text-muted)]" />
                             <input 
-                                type="email" 
+                                type="text" 
                                 className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white focus:ring-1 focus:ring-[var(--color-primary)] outline-none"
-                                placeholder="client@company.com"
-                                value={formData.email}
-                                onChange={e => setFormData({...formData, email: e.target.value})}
+                                placeholder="jdoe or user@example.com"
+                                value={fromShadowEmail(formData.email)}
+                                onChange={e => setFormData({...formData, email: toShadowEmail(e.target.value)})}
                                 required
                             />
                         </div>

@@ -7,6 +7,7 @@ import { ArrowLeft, UserPlus, User, Building, CheckCircle, AlertCircle, Trash2, 
 import Image from "next/image";
 import ClientModal from "@/components/dashboard/ClientModal";
 import { useProfile } from "@/hooks/useProfile";
+import { fromShadowEmail } from "@/lib/constants";
 
 interface Profile {
   id: string;
@@ -31,14 +32,7 @@ export default function UsersManagementPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   // Form State
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    fullName: "",
-    companyName: "",
-    logoUrl: "",
-    websiteUrl: "",
-  });
+
 
   const fetchProfiles = useCallback(async () => {
     const { data } = await supabase
@@ -58,24 +52,8 @@ export default function UsersManagementPage() {
   const openModal = (profile?: Profile) => {
     if (profile) {
       setEditingProfile(profile);
-      setFormData({
-        email: profile.email,
-        password: "", // Don't show password on edit
-        fullName: profile.full_name || "",
-        companyName: profile.company_name || "",
-        logoUrl: profile.logo_url || "",
-        websiteUrl: profile.website_url || "",
-      });
     } else {
       setEditingProfile(null);
-      setFormData({
-        email: "",
-        password: "",
-        fullName: "",
-        companyName: "",
-        logoUrl: "",
-        websiteUrl: "",
-      });
     }
     setModalOpen(true);
   };
@@ -85,34 +63,59 @@ export default function UsersManagementPage() {
     setModalOpen(false);
   };
 
-  const handleSaveUser = async () => {
-    if (!formData.email || (!editingProfile && !formData.password) || !formData.fullName) {
+  const handleSaveUser = async (submittedData: any) => {
+    if (!submittedData.email || (!editingProfile && !submittedData.password) || !submittedData.fullName) {
       setNotification({ type: 'error', message: "Email, Full Name, and Password (for new users) are required." });
       return;
     }
 
     setSubmitting(true);
     try {
+      // Get current session for API authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("No active session. Please log in again.");
+      }
+      const token = session.access_token;
+
       if (editingProfile) {
         // Update existing profile
         const { error: profileError } = await supabase
           .from("profiles")
           .update({
-            full_name: formData.fullName,
-            company_name: formData.companyName,
-            logo_url: formData.logoUrl,
-            website_url: formData.websiteUrl,
+            full_name: submittedData.fullName,
+            company_name: submittedData.companyName,
+            logo_url: submittedData.logoUrl,
+            website_url: submittedData.websiteUrl,
           })
           .eq("id", editingProfile.id);
 
         if (profileError) throw profileError;
+        
+        // Handle Username (Email) Update if changed
+        if (submittedData.email !== editingProfile.email) {
+          const emailResponse = await fetch('/api/admin/update-username', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ userId: editingProfile.id, email: submittedData.email }),
+          });
+
+          const emailResult = await emailResponse.json();
+          if (!emailResponse.ok) throw new Error(emailResult.error || "Failed to update username");
+        }
 
         // NEW: Handle Password Update if provided
-        if (formData.password) {
+        if (submittedData.password) {
           const passResponse = await fetch('/api/admin/update-password', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: editingProfile.id, password: formData.password }),
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ userId: editingProfile.id, password: submittedData.password }),
           });
 
           const passResult = await passResponse.json();
@@ -124,8 +127,11 @@ export default function UsersManagementPage() {
         // Create new user via API
         const response = await fetch('/api/admin/create-user', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(submittedData),
         });
 
         const result = await response.json();
@@ -149,9 +155,19 @@ export default function UsersManagementPage() {
     if (!deleteConfirm) return;
     setSubmitting(true);
     try {
+      // Get current session for API authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("No active session. Please log in again.");
+      }
+      const token = session.access_token;
+
       const response = await fetch('/api/admin/delete-user', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ userId: deleteConfirm }),
       });
 
@@ -248,7 +264,7 @@ export default function UsersManagementPage() {
                                     </td>
                                     <td className="px-6 py-5">
                                         <div className="flex flex-col">
-                                            <span className="text-white text-sm">{profile.email}</span>
+                                            <span className="text-white text-sm">{fromShadowEmail(profile.email)}</span>
                                             <span className="text-[var(--color-text-muted)] text-[10px] uppercase tracking-wider mt-0.5">Joined {new Date(profile.created_at).toLocaleDateString()}</span>
                                         </div>
                                     </td>
