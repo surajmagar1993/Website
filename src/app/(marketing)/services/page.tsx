@@ -1,7 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { ArrowRight, Globe, Smartphone, Search, BarChart3, Target, Monitor, Code, Database, Cloud, Shield, Zap, Layout, Server, Cpu } from "lucide-react";
-import ImagePlaceholder from "@/components/ui/ImagePlaceholder";
 
 // Extended icon map to cover more potential icons
 const iconMap: Record<string, React.ReactNode> = {

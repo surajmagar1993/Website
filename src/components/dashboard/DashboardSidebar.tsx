@@ -47,7 +47,7 @@ export default function DashboardSidebar({ userRole }: DashboardSidebarProps) {
   const adminLinks = [
     { href: "/dashboard", label: "Overview", icon: <LayoutDashboard size={20} /> },
     { href: "/dashboard/admin/inquiries", label: "Inquiries", icon: <Mail size={20} /> },
-    { href: "/dashboard/admin/clients", label: "Clients", icon: <Users size={20} /> },
+    { href: "/dashboard/admin/users", label: "Clients", icon: <Users size={20} /> },
     { href: "/dashboard/admin/services", label: "Services", icon: <Settings size={20} /> },
     { href: "/dashboard/admin/products", label: "Products", icon: <Package size={20} /> },
     { href: "/dashboard/admin/work", label: "Case Studies", icon: <Briefcase size={20} /> },

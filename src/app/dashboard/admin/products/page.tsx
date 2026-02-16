@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { Plus, Search, Edit, Trash2, Package, ArrowLeft } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Package, ArrowLeft, Monitor, Loader2, FileSpreadsheet } from "lucide-react";
 import Link from "next/link";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface Product {
   id: string;
@@ -14,6 +16,9 @@ interface Product {
   status: string;
   created_at: string;
   current_client_id: string | null;
+  assigned_date?: string;
+  replacement_date?: string;
+  return_date?: string;
   profiles?: {
     full_name: string;
     email: string;
@@ -26,12 +31,21 @@ interface Client {
   email: string;
 }
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   
   // Assignment State
@@ -42,12 +56,18 @@ export default function AdminProductsPage() {
   // Form State
   const [formData, setFormData] = useState({
     name: "",
-    category: "Laptop",
+    category: "",
     serial_number: "",
     model: "",
     status: "available"
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+  const [isExporting, setIsExporting] = useState(false);
+  const [clientFilter, setClientFilter] = useState("all");
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -64,12 +84,23 @@ export default function AdminProductsPage() {
     if (data) setClients(data);
   }, []);
 
+  const fetchCategories = useCallback(async () => {
+    const { data } = await supabase.from("product_categories").select("*").order("name");
+    if (data) {
+        setCategories(data);
+        if (!formData.category && data.length > 0) {
+            setFormData(prev => ({ ...prev, category: data[0].name }));
+        }
+    }
+  }, [formData.category]);
+
   useEffect(() => {
     setTimeout(() => {
         fetchProducts();
         fetchClients();
+        fetchCategories();
     }, 0);
-  }, [fetchProducts, fetchClients]);
+  }, [fetchProducts, fetchClients, fetchCategories]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +111,7 @@ export default function AdminProductsPage() {
     }
     setShowForm(false);
     setEditingId(null);
-    setFormData({ name: "", category: "Laptop", serial_number: "", model: "", status: "available" });
+    setFormData({ name: "", category: categories[0]?.name || "", serial_number: "", model: "", status: "available" });
     fetchProducts();
   };
 
@@ -109,7 +140,8 @@ export default function AdminProductsPage() {
     // 1. Update Product
     await supabase.from("products").update({
         status: 'available',
-        current_client_id: null
+        current_client_id: null,
+        return_date: new Date().toISOString()
     }).eq('id', showReturnConfirm);
 
     // 2. Here we would ideally close the assignment record too, but for now we just free the product.
@@ -125,7 +157,9 @@ export default function AdminProductsPage() {
       // 1. Update Product
       await supabase.from("products").update({
           status: 'rented',
-          current_client_id: selectedClient
+          current_client_id: selectedClient,
+          assigned_date: new Date().toISOString(),
+          return_date: null
       }).eq('id', showAssignModal);
 
       // 2. Create Assignment Record
@@ -141,10 +175,148 @@ export default function AdminProductsPage() {
       fetchProducts();
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
-    p.serial_number.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleCreateCategory = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newCategoryName.trim()) return;
+      setIsAddingCategory(true);
+      const { error } = await supabase.from("product_categories").insert({ name: newCategoryName.trim() });
+      if (!error) {
+          setNewCategoryName("");
+          fetchCategories();
+      }
+      setIsAddingCategory(false);
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+      if (!window.confirm("Are you sure? This won't delete products in this category, but they will become 'Uncategorized'.")) return;
+      await supabase.from("product_categories").delete().eq("id", id);
+      fetchCategories();
+  };
+
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
+                          p.serial_number.toLowerCase().includes(search.toLowerCase()) ||
+                          p.model.toLowerCase().includes(search.toLowerCase()) ||
+                          (p.category && p.category.toLowerCase().includes(search.toLowerCase()));
+    
+    const matchesClient = clientFilter === "all" ? true : p.current_client_id === clientFilter;
+    
+    return matchesSearch && matchesClient;
+  });
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+
+  // Reset page on search
+  // useEffect(() => {
+  //   setCurrentPage(1);
+  // }, [search]);
+
+  // Robust download helper
+  const downloadFile = (blob: Blob, fileName: string) => {
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+  };
+
+  const exportToExcel = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+
+    try {
+        if (!filteredProducts || filteredProducts.length === 0) {
+            alert("No data available to export.");
+            setIsExporting(false);
+            return;
+        }
+
+        const XLSX = await import('xlsx');
+
+        const dataToExport = filteredProducts.map(p => ({
+            Name: p.name,
+            Model: p.model,
+            Category: p.category || 'N/A',
+            SerialNumber: p.serial_number,
+            Status: p.status,
+            AssignedTo: p.profiles?.full_name || 'N/A',
+            AssignedDate: p.assigned_date ? new Date(p.assigned_date).toLocaleDateString() : 'N/A',
+            ReturnDate: p.return_date ? new Date(p.return_date).toLocaleDateString() : 'N/A',
+            ReplacementDate: p.replacement_date ? new Date(p.replacement_date).toLocaleDateString() : 'N/A',
+            RegisteredDate: new Date(p.created_at).toLocaleDateString()
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory_Export");
+        
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        
+        downloadFile(blob, `Genesoft_Inventory_${new Date().toISOString().split('T')[0]}.xlsx`);
+        setIsExporting(false);
+
+    } catch (error) {
+        console.error("Export to Excel failed:", error);
+        alert(`Failed to export to Excel: ${(error as Error).message}`);
+        setIsExporting(false);
+    }
+  };
+
+  const exportToPDF = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
+
+    try {
+        if (!filteredProducts || filteredProducts.length === 0) {
+            alert("No data available to export.");
+            setIsExporting(false);
+            return;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const doc = new jsPDF() as any;
+        
+        doc.text("Genesoft Infotech - Product Inventory", 14, 20);
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+        doc.text(`Filter: ${clientFilter === 'all' ? 'All Clients' : clients.find(c => c.id === clientFilter)?.full_name || 'Unknown Client'}`, 14, 35);
+
+        autoTable(doc, {
+            head: [['Name', 'Model', 'Category', 'Serial', 'Status', 'Assigned To', 'Assigned Date']],
+            body: filteredProducts.map(p => [
+                p.name, 
+                p.model, 
+                p.category || 'N/A', 
+                p.serial_number,
+                p.status,
+                p.profiles?.full_name || 'N/A',
+                p.assigned_date ? new Date(p.assigned_date).toLocaleDateString() : 'N/A'
+            ]),
+            startY: 45,
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [66, 133, 244] }
+        });
+
+        const pdfBlob = doc.output('blob');
+        downloadFile(pdfBlob, `Genesoft_Inventory_${new Date().toISOString().split('T')[0]}.pdf`);
+        setIsExporting(false);
+        
+    } catch (error) {
+        console.error("Export to PDF failed:", error);
+        alert(`Failed to export to PDF: ${(error as Error).message}`);
+        setIsExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] p-8">
@@ -157,25 +329,69 @@ export default function AdminProductsPage() {
             <h1 className="text-3xl font-bold text-white font-[family-name:var(--font-heading)]">Product Inventory</h1>
              <p className="text-[var(--color-text-muted)] text-sm">Manage hardware assets & assignments</p>
           </div>
-          <button 
+          <div className="flex items-center gap-3">
+            <button 
                 type="button"
-                onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", category: "Laptop", serial_number: "", model: "", status: "available" }); }}
+                onClick={() => setShowCategoryModal(true)}
+                className="px-4 py-3 rounded-xl border border-white/10 text-[var(--color-text-muted)] hover:text-white hover:bg-white/5 transition-all text-sm font-bold"
+            >
+                Manage Categories
+            </button>
+            <button 
+                type="button"
+                onClick={() => { setShowForm(true); setEditingId(null); setFormData({ name: "", category: categories[0]?.name || "", serial_number: "", model: "", status: "available" }); }}
                 className="btn-primary flex items-center gap-2 px-6 py-3 rounded-xl shadow-lg shadow-[var(--color-primary)]/20"
             >
                 <Plus size={18} /> Add Product
             </button>
+          </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="glass p-4 rounded-xl mb-8 flex items-center gap-4 border border-white/5">
-            <Search className="text-[var(--color-text-muted)]" size={20} />
-            <input 
-                type="text" 
-                placeholder="Search by name, serial, or category..." 
-                className="bg-transparent border-none focus:ring-0 text-white w-full outline-none placeholder:text-[var(--color-text-muted)]/50"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-            />
+        {/* Search & Filter Bar */}
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+            <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={20} />
+                <input 
+                    type="text" 
+                    placeholder="Search products..." 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors h-full"
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                />
+            </div>
+            
+            <div className="w-full md:w-64">
+                <select 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]/50 h-full"
+                    value={clientFilter}
+                    onChange={(e) => { setClientFilter(e.target.value); setCurrentPage(1); }}
+                    aria-label="Filter by Client"
+                >
+                    <option value="all">All Clients</option>
+                    {clients.map(c => (
+                        <option key={c.id} value={c.id}>{c.full_name}</option>
+                    ))}
+                </select>
+            </div>
+
+            <div className="flex gap-2">
+                <button 
+                    onClick={exportToExcel}
+                    disabled={isExporting}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/20 rounded-xl hover:bg-green-500/20 transition-all font-medium text-sm disabled:opacity-50 whitespace-nowrap"
+                >
+                    {isExporting ? <Loader2 className="animate-spin" size={18} /> : <FileSpreadsheet size={18} />} 
+                    {isExporting ? 'Exporting...' : 'Excel'}
+                </button>
+                <button 
+                    onClick={exportToPDF}
+                    disabled={isExporting}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl hover:bg-red-500/20 transition-all font-medium text-sm disabled:opacity-50 whitespace-nowrap"
+                >
+                    {isExporting ? <Loader2 className="animate-spin" size={18} /> : <FileSpreadsheet size={18} />} 
+                    {isExporting ? 'Exporting...' : 'PDF'}
+                </button>
+            </div>
         </div>
 
         {/* Assignment Modal */}
@@ -233,6 +449,50 @@ export default function AdminProductsPage() {
             </div>
         )}
 
+        {/* Category Management Modal */}
+        {showCategoryModal && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setShowCategoryModal(false)}>
+                <div className="glass p-8 rounded-2xl w-full max-w-md border border-[var(--color-primary)]/20 shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-bold text-white">Manage Categories</h2>
+                        <button onClick={() => setShowCategoryModal(false)} className="text-[var(--color-text-muted)] hover:text-white transition-colors">✕</button>
+                    </div>
+
+                    <form onSubmit={handleCreateCategory} className="flex gap-2 mb-6">
+                        <input 
+                            className="flex-1 bg-[var(--color-surface)] border border-white/10 rounded-lg p-3 text-white outline-none focus:ring-1 focus:ring-[var(--color-primary)]"
+                            placeholder="New category name..."
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            required
+                        />
+                        <button 
+                            type="submit" 
+                            disabled={isAddingCategory}
+                            className="bg-[var(--color-primary)] text-black font-bold px-4 rounded-lg hover:opacity-90 disabled:opacity-50"
+                        >
+                            {isAddingCategory ? <Loader2 className="animate-spin" size={20} /> : <Plus size={20} />}
+                        </button>
+                    </form>
+
+                    <div className="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                        {categories.map(cat => (
+                            <div key={cat.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 group">
+                                <span className="text-white text-sm font-medium">{cat.name}</span>
+                                <button 
+                                    onClick={() => handleDeleteCategory(cat.id)}
+                                    className="p-2 text-[var(--color-text-muted)] hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
+                                    title="Delete Category"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        )}
+
         {/* Form Modal */}
         {showForm && (
             <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={() => setShowForm(false)}>
@@ -264,16 +524,17 @@ export default function AdminProductsPage() {
                              </div>
                              <div>
                                 <label className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold ml-1 mb-1 block">Category</label>
-                                <select 
+                                 <select 
                                     className="w-full bg-[var(--color-surface)] border border-white/10 rounded-lg p-3 text-white focus:ring-1 focus:ring-[var(--color-primary)] outline-none" 
                                     value={formData.category} 
                                     onChange={e => setFormData({...formData, category: e.target.value})}
                                     aria-label="Product Category"
+                                    required
                                 >
-                                    <option value="Laptop">Laptop</option>
-                                    <option value="Desktop">Desktop</option>
-                                    <option value="Server">Server</option>
-                                    <option value="Accessory">Accessory</option>
+                                    <option value="" disabled>Select Category</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                    ))}
                                 </select>
                              </div>
                         </div>
@@ -312,33 +573,49 @@ export default function AdminProductsPage() {
             </div>
         )}
 
-        {/* Product List Grouped by Category */}
-        <div className="space-y-8">
-            {loading ? (
-                <div className="p-12 text-center text-[var(--color-text-muted)]">Loading inventory...</div>
-            ) : (
-                Object.entries(
-                    filteredProducts.reduce((acc, product) => {
-                        const cat = product.category || 'Uncategorized';
-                        if (!acc[cat]) acc[cat] = [];
-                        acc[cat].push(product);
-                        return acc;
-                    }, {} as Record<string, Product[]>)
-                ).map(([category, items]) => (
-                    <div key={category}>
-                        <h2 className="text-xl font-bold text-white mb-6 pb-2 flex items-center gap-2">
-                             <div className="px-3 py-1 bg-white/5 rounded-lg border border-white/10 text-sm">
-                                {category}
-                             </div>
-                             <span className="text-sm font-normal text-[var(--color-text-muted)] ml-auto">{items.length} units</span>
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {items.map((product) => (
-                                <div key={product.id} className="glass p-5 rounded-xl flex flex-col justify-between border border-white/5 hover:border-[var(--color-primary)]/30 transition-all hover:translate-y-[-2px] hover:shadow-lg">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className="w-10 h-10 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center text-[var(--color-primary)]">
-                                            <Package size={20} />
+        {/* Product Table */}
+        <div className="glass rounded-xl border border-white/5 overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-white/5 border-b border-white/5">
+                            <th className="p-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Product</th>
+                            <th className="p-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Category</th>
+                            <th className="p-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Serial / Model</th>
+                            <th className="p-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Status</th>
+                            <th className="p-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Dates</th>
+                            <th className="p-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider">Assigned To</th>
+                            <th className="p-4 text-xs font-bold text-[var(--color-text-muted)] uppercase tracking-wider text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                        {loading ? (
+                             <tr><td colSpan={7} className="p-8 text-center text-[var(--color-text-muted)]">Loading inventory...</td></tr>
+                        ) : filteredProducts.length === 0 ? (
+                             <tr><td colSpan={7} className="p-8 text-center text-[var(--color-text-muted)]">No products found.</td></tr>
+                        ) : (
+                            currentItems.map((product) => (
+                                <tr key={product.id} className="group hover:bg-white/5 transition-colors">
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${product.name.toLowerCase().includes('desktop') ? 'bg-blue-500/10 text-blue-400' : 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'}`}>
+                                                {product.name.toLowerCase().includes('desktop') ? <Monitor size={20} /> : <Package size={20} />}
+                                            </div>
+                                            <span className="font-bold text-white">{product.name}</span>
                                         </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <span className="px-2 py-1 rounded-md text-xs font-medium bg-white/5 text-[var(--color-text-muted)] border border-white/10">
+                                            {product.category || 'Uncategorized'}
+                                        </span>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex flex-col">
+                                            <span className="text-white font-mono text-xs">{product.serial_number}</span>
+                                            <span className="text-[var(--color-text-muted)] text-xs">{product.model}</span>
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
                                         <span className={`px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider border ${
                                             product.status === 'available' ? 'text-green-400 bg-green-400/5 border-green-400/20' :
                                             product.status === 'rented' ? 'text-blue-400 bg-blue-400/5 border-blue-400/20' :
@@ -346,61 +623,94 @@ export default function AdminProductsPage() {
                                         }`}>
                                             {product.status}
                                         </span>
-                                    </div>
-                                    
-                                    <div className="mb-4">
-                                        <h3 className="text-white font-bold text-lg mb-1">{product.name}</h3>
-                                        <p className="text-xs text-[var(--color-text-muted)] font-mono">SN: {product.serial_number}</p>
-                                        <p className="text-xs text-[var(--color-text-muted)]">{product.model}</p>
-                                    </div>
-
-                                    {product.current_client_id && (
-                                        <div className="mb-4 p-3 bg-white/5 rounded-lg border border-white/5">
-                                            <p className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">Assigned To</p>
-                                            <p className="text-sm text-white font-medium flex items-center gap-2">
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex flex-col gap-1">
+                                            {product.assigned_date && (
+                                                <div className="text-[10px] text-[var(--color-text-muted)]">
+                                                    Assign: <span className="text-white">{new Date(product.assigned_date).toLocaleDateString()}</span>
+                                                </div>
+                                            )}
+                                            {product.return_date && (
+                                                <div className="text-[10px] text-[var(--color-text-muted)]">
+                                                    Return: <span className="text-white">{new Date(product.return_date).toLocaleDateString()}</span>
+                                                </div>
+                                            )}
+                                            {!product.assigned_date && !product.return_date && (
+                                                <span className="text-[var(--color-text-muted)] text-xs">-</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        {product.current_client_id ? (
+                                             <div className="flex items-center gap-2">
                                                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                                                {product.profiles?.full_name || 'Unknown'}
-                                            </p>
-                                        </div>
-                                    )}
-                                    
-                                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
-                                        <div className="flex gap-2">
-                                            <button type="button" onClick={() => handleEdit(product)} className="p-2 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-white transition-colors" aria-label="Edit Product"><Edit size={16} /></button>
-                                            <button type="button" onClick={() => setShowDeleteConfirm(product.id)} className="p-2 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-red-400 transition-colors" aria-label="Delete Product"><Trash2 size={16} /></button>
-                                        </div>
-
-                                        {product.status === 'available' && (
-                                            <button 
-                                                type="button" 
-                                                onClick={() => setShowAssignModal(product.id)} 
-                                                className="px-3 py-1.5 bg-[var(--color-primary)]/10 text-[var(--color-primary)] text-xs font-bold rounded-lg hover:bg-[var(--color-primary)] hover:text-black transition-colors"
-                                            >
-                                                Assign
-                                            </button>
+                                                <span className="text-sm text-white">{product.profiles?.full_name || 'Unknown'}</span>
+                                             </div>
+                                        ) : (
+                                            <span className="text-[var(--color-text-muted)] text-xs">-</span>
                                         )}
-                                        {product.status === 'rented' && (
-                                            <button 
-                                                type="button" 
-                                                onClick={() => setShowReturnConfirm(product.id)} 
-                                                className="px-3 py-1.5 bg-white/5 text-white text-xs font-bold rounded-lg hover:bg-white/10 border border-white/10"
-                                            >
-                                                Return
+                                    </td>
+                                    <td className="p-4 text-right">
+                                        <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {product.status === 'available' && (
+                                                <button 
+                                                    onClick={() => setShowAssignModal(product.id)}
+                                                    className="p-2 bg-[var(--color-primary)]/10 text-[var(--color-primary)] rounded-lg hover:bg-[var(--color-primary)] hover:text-black transition-colors"
+                                                    title="Assign to Client"
+                                                >
+                                                    <Package size={16} />
+                                                </button>
+                                            )}
+                                            {product.status === 'rented' && (
+                                                <button 
+                                                    onClick={() => setShowReturnConfirm(product.id)}
+                                                    className="p-2 bg-white/5 text-white rounded-lg hover:bg-white/10 border border-white/10 transition-colors"
+                                                    title="Return Product"
+                                                >
+                                                    <ArrowLeft size={16} />
+                                                </button>
+                                            )}
+                                            <button onClick={() => handleEdit(product)} className="p-2 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-white transition-colors" title="Edit Product" aria-label="Edit Product">
+                                                <Edit size={16} />
                                             </button>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                ))
-            )}
+                                            <button onClick={() => setShowDeleteConfirm(product.id)} className="p-2 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-red-400 transition-colors" title="Delete Product" aria-label="Delete Product">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
             
-            {!loading && filteredProducts.length === 0 && (
-                <div className="text-center py-20 bg-white/5 rounded-2xl border border-dashed border-white/10">
-                    <Package size={48} className="mx-auto text-[var(--color-text-muted)] mb-4 opacity-50" />
-                    <p className="text-lg text-white font-medium">No products found</p>
-                    <p className="text-[var(--color-text-muted)] text-sm">Try adjusting your search query.</p>
+            {/* Pagination Controls */}
+            {!loading && filteredProducts.length > 0 && (
+                <div className="flex items-center justify-between p-4 border-t border-white/5 bg-white/5">
+                    <div className="text-xs text-[var(--color-text-muted)]">
+                        Showing <span className="text-white font-medium">{indexOfFirstItem + 1}</span> to <span className="text-white font-medium">{Math.min(indexOfLastItem, filteredProducts.length)}</span> of <span className="text-white font-medium">{filteredProducts.length}</span> results
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            className="p-1.5 rounded-lg hover:bg-white/10 text-[var(--color-text-muted)] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Previous
+                        </button>
+                        <span className="text-xs text-[var(--color-text-muted)]">
+                            Page <span className="text-white font-medium">{currentPage}</span> of <span className="text-white font-medium">{totalPages}</span>
+                        </span>
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            className="p-1.5 rounded-lg hover:bg-white/10 text-[var(--color-text-muted)] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

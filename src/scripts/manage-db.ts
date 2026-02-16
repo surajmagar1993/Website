@@ -1,7 +1,10 @@
-const { createClient } = require('@supabase/supabase-js');
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config({ path: '.env.local' });
+import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+import path from 'path';
+import * as dotenv from 'dotenv';
+
+dotenv.config({ path: '.env.local' });
+
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -12,7 +15,7 @@ const arg2 = process.argv[4];
 if (!command) {
   console.log(`
 Usage:
-  node src/scripts/manage-db.js <command> [args]
+  npx tsx src/scripts/manage-db.ts <command> [args]
 
 Commands:
   create-bucket <name> [public?]   Create a storage bucket (requires SERVICE_ROLE_KEY)
@@ -39,7 +42,7 @@ async function main() {
   }
 }
 
-async function createBucket(name, isPublic = true) {
+async function createBucket(name: string, isPublic = true) {
     if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
         console.error('Error: Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
         return;
@@ -73,7 +76,7 @@ async function listBuckets() {
     }
 }
 
-async function runSql(filePath) {
+async function runSql(filePath: string) {
     if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
         console.error('Error: Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
         return;
@@ -95,7 +98,6 @@ async function runSql(filePath) {
 
     console.log(`Executing SQL from ${path.basename(filePath)} via RPC...`);
     
-    // Call the exec_sql function we created
     const { data, error } = await supabase.rpc('exec_sql', { sql_query: sqlContent });
 
     if (error) {

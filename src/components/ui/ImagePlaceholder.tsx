@@ -9,15 +9,12 @@ interface ImagePlaceholderProps {
 }
 
 const ImagePlaceholder: React.FC<ImagePlaceholderProps> = ({ 
-  width = '100%', 
-  height = '100%', 
   className = '',
   text = 'Image not available'
 }) => {
   return (
     <div 
-      className={`relative overflow-hidden flex items-center justify-center ${className}`}
-      style={{ width, height, background: 'linear-gradient(to bottom right, #1f2937, #111827)' }}
+      className={`relative overflow-hidden flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 w-full h-full ${className}`}
     >
       {/* Abstract Pattern Overlay */}
       <div className="absolute inset-0 opacity-20">

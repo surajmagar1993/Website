@@ -27,6 +27,7 @@ interface DashboardStats {
   services: number;
   caseStudies: number;
   inquiries: number;
+  users: number;
 }
 
 export default function DashboardPage() {
@@ -40,6 +41,7 @@ export default function DashboardPage() {
     services: 0,
     caseStudies: 0,
     inquiries: 0,
+    users: 0,
   });
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export default function DashboardPage() {
           
         setProfile(profileData);
 
-        if (profileData?.role === 'admin') {
+        if (false) { // FORCE CLIENT ROLE FOR TESTING
           const [
             { count: clientsCount },
             { count: assignmentsCount },
@@ -66,7 +68,7 @@ export default function DashboardPage() {
             { count: caseStudiesCount },
             { count: inquiriesCount }
           ] = await Promise.all([
-            supabase.from("clients").select("*", { count: "exact", head: true }),
+            supabase.from("profiles").select("*", { count: "exact", head: true }).eq("role", "client"),
             supabase.from("assignments").select("*", { count: "exact", head: true }),
             supabase.from("tickets").select("*", { count: "exact", head: true }).eq("status", "open"),
             supabase.from("services").select("*", { count: "exact", head: true }),
@@ -81,6 +83,7 @@ export default function DashboardPage() {
             services: servicesCount || 0,
             caseStudies: caseStudiesCount || 0,
             inquiries: inquiriesCount || 0,
+            users: clientsCount || 0,
           });
         }
       }
@@ -98,7 +101,7 @@ export default function DashboardPage() {
       <div className="space-y-8">
         <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2 font-[family-name:var(--font-heading)]">
-              {profile?.role === 'admin' ? 'Overview' : 'My Dashboard'}
+             {/* FORCE CLIENT ROLE FOR TESTING */} {'My Dashboard'}
             </h1>
             <p className="text-[var(--color-text-secondary)]">
               Welcome back, {profile?.full_name || user?.email}
@@ -110,7 +113,7 @@ export default function DashboardPage() {
             
             {/* 1. Quick Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-               <Link href="/dashboard/admin/clients" className="glass p-5 rounded-2xl hover:bg-white/5 transition-all group border border-white/5 hover:border-[var(--color-primary)]/30">
+               <Link href="/dashboard/admin/users" className="glass p-5 rounded-2xl hover:bg-white/5 transition-all group border border-white/5 hover:border-[var(--color-primary)]/30">
                   <div className="flex justify-between items-start mb-4">
                       <div className="p-3 rounded-xl bg-[var(--color-primary)]/10 text-[var(--color-primary)] group-hover:bg-[var(--color-primary)]/20 transition-colors">
                           <Users size={20} />
@@ -121,7 +124,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                       <h3 className="text-3xl font-bold text-white mb-1 font-[family-name:var(--font-heading)]">{stats.clients}</h3>
-                      <p className="text-sm text-[var(--color-text-secondary)]">Active Clients</p>
+                      <p className="text-sm text-[var(--color-text-secondary)]">Manage Clients</p>
                   </div>
                </Link>
 
@@ -162,6 +165,7 @@ export default function DashboardPage() {
                       <p className="text-sm text-[var(--color-text-secondary)]">Active Rentals</p>
                   </div>
                </Link>
+
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -204,7 +208,7 @@ export default function DashboardPage() {
                <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl text-white font-[family-name:var(--font-heading)]">Your Rented Products</h3>
-                    <Link href="/services" className="text-sm text-[var(--color-primary)] hover:text-white transition-colors">
+                    <Link href="/dashboard/catalog" className="text-sm text-[var(--color-primary)] hover:text-white transition-colors">
                         Browse Catalog &rarr;
                     </Link>
                   </div>

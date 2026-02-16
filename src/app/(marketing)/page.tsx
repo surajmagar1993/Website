@@ -3,12 +3,11 @@ import { getSiteSettings } from "@/lib/settings";
 import * as Icons from "lucide-react";
 import { GlowCard, StaggerItem, FadeIn, ParallaxOrb, StaggerContainer } from "@/components/Motion";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Users, Briefcase, MapPin, Crosshair, BarChart3, Handshake, Phone, Mail, Clock } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Users, Briefcase, MapPin, Phone, Mail, Clock } from "lucide-react";
 import { getPageSeo } from "@/lib/seo";
 import Image from "next/image";
 import { HyperText } from "@/components/ui/HyperText";
 import ImagePlaceholder from "@/components/ui/ImagePlaceholder";
-
 
 const DynamicIcon = ({ name }: { name: string }) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,27 +19,26 @@ export async function generateMetadata() {
   return await getPageSeo('/');
 }
 
+interface ValueProp {
+  icon: string;
+  title: string;
+  description: string;
+}
 
+interface ProcessStep {
+  step: number;
+  title: string;
+  description: string;
+}
 
-const valueProps = [
-  {
-    icon: <Crosshair size={28} />,
-    title: "End-to-End Expertise",
-    description: "We don't just build software — we understand your business. Complete strategy to ongoing support.",
-  },
-  {
-    icon: <BarChart3 size={28} />,
-    title: "Results, Not Just Deliverables",
-    description: "Your success is our metric. We focus on outcomes: revenue, efficiency, and lasting competitive advantages.",
-  },
-  {
-    icon: <Handshake size={28} />,
-    title: "Transparent & Agile",
-    description: "No tech jargon, no surprises. Clear communication and regular updates every step of the way.",
-  },
+// Fallback defaults for JSON content
+const defaultValueProps: ValueProp[] = [
+  { icon: "Crosshair", title: "End-to-End Expertise", description: "We don't just build software — we understand your business. Complete strategy to ongoing support." },
+  { icon: "BarChart3", title: "Results, Not Just Deliverables", description: "Your success is our metric. We focus on outcomes: revenue, efficiency, and lasting competitive advantages." },
+  { icon: "Handshake", title: "Transparent & Agile", description: "No tech jargon, no surprises. Clear communication and regular updates every step of the way." },
 ];
 
-const processSteps = [
+const defaultProcessSteps: ProcessStep[] = [
   { step: 1, title: "Discovery", description: "Understand your business, challenges, and goals" },
   { step: 2, title: "Strategy", description: "Design roadmap tailored to your objectives & budget" },
   { step: 3, title: "Development", description: "Build with precision, regular updates & milestones" },
@@ -50,8 +48,10 @@ const processSteps = [
 /* Client Logos Component */
 async function ClientLogos() {
   const { data: clients } = await supabase
-    .from('clients')
-    .select('*')
+    .from('profiles')
+    .select('id, full_name, logo_url')
+    .eq('role', 'client')
+    .not('logo_url', 'is', null)
     .order('created_at', { ascending: false });
 
   if (!clients || clients.length === 0) return null;
@@ -71,9 +71,9 @@ async function ClientLogos() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={client.logo_url}
-              alt={client.name}
+              alt={client.full_name}
               className="max-h-12 w-auto object-contain transition-transform group-hover:scale-110"
-              title={client.name}
+              title={client.full_name}
             />
           </div>
         ))}
@@ -84,6 +84,37 @@ async function ClientLogos() {
 
 export default async function HomePage() {
   const settings = await getSiteSettings();
+
+  const { data: services } = await supabase
+    .from('services')
+    .select('*')
+    .order('display_order', { ascending: true });
+
+  const { data: caseStudies } = await supabase
+    .from('case_studies')
+    .select('*')
+    .order('display_order', { ascending: true });
+
+  // Parse Dynamic JSON Content
+  let dynamicValueProps: ValueProp[] = defaultValueProps;
+  try {
+    if (settings.value_props_json) {
+        const parsed = JSON.parse(settings.value_props_json);
+        if (Array.isArray(parsed)) dynamicValueProps = parsed;
+    }
+  } catch (e) { 
+    console.error("Error parsing value_props_json", e);
+  }
+
+  let dynamicProcessSteps: ProcessStep[] = defaultProcessSteps;
+  try {
+    if (settings.process_steps_json) {
+        const parsed = JSON.parse(settings.process_steps_json);
+        if (Array.isArray(parsed)) dynamicProcessSteps = parsed;
+    }
+  } catch (e) { 
+    console.error("Error parsing process_steps_json", e);
+  }
 
   const trustBadges = [
     { 
@@ -103,27 +134,10 @@ export default async function HomePage() {
     },
   ];
 
-  const { data: services } = await supabase
-    .from('services')
-    .select('*')
-    .order('display_order', { ascending: true });
-
-  const { data: caseStudies } = await supabase
-    .from('case_studies')
-    .select('*')
-    .order('display_order', { ascending: true });
-
   return (
     <>
       {/* ═══ SECTION 1: HERO ═══ */}
       <section className="min-h-screen flex items-center justify-center relative overflow-hidden">
-        {/* Global Animation is handled in layout.tsx */}
-
-
-
-
-
-
         <div className="container mx-auto px-6 relative z-10 pt-32 pb-20">
           <div className="max-w-4xl text-center mx-auto">
             <h1 className="font-[family-name:var(--font-heading)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-[900] text-white leading-[1.1] mb-8 tracking-tight flex flex-col items-center">
@@ -147,7 +161,7 @@ export default async function HomePage() {
                 {settings.home_hero_cta_text || "Get Free Consultation"} <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link href="/work" className="btn-outline inline-flex items-center gap-2 justify-center group">
-                View Our Work <ArrowRight size={18} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" />
+                 View Our Work <ArrowRight size={18} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all" />
               </Link>
             </FadeIn>
 
@@ -182,11 +196,11 @@ export default async function HomePage() {
           </FadeIn>
 
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {valueProps.map((prop) => (
+            {dynamicValueProps.map((prop: ValueProp) => (
               <StaggerItem key={prop.title}>
                 <GlowCard className="h-full p-8 rounded-2xl text-center">
                   <div className="w-14 h-14 rounded-2xl bg-[var(--color-primary)]/10 flex items-center justify-center mx-auto mb-6 text-[var(--color-primary)]">
-                    {prop.icon}
+                    <DynamicIcon name={prop.icon || 'Crosshair'} />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-4 font-[family-name:var(--font-heading)]">
                     {prop.title}
@@ -238,11 +252,14 @@ export default async function HomePage() {
                           />
                         </div>
                       ) : (
-                        <div className="w-12 h-12 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center mb-6 text-[var(--color-primary)] group-hover:bg-[var(--color-primary)]/20 transition-colors">
-                          <DynamicIcon name={service.icon} />
+                        <div className="w-full h-48 mb-6 rounded-xl overflow-hidden relative group-hover:shadow-lg transition-all">
+                           <ImagePlaceholder text={service.title} />
                         </div>
                       )}
                       
+                      <div className="mb-4 text-[var(--color-primary)] bg-[var(--color-primary)]/10 w-fit p-3 rounded-lg relative z-10 transition-colors group-hover:bg-[var(--color-primary)] group-hover:text-black">
+                        <DynamicIcon name={service.icon || service.icon_name || 'Code2'} />
+                      </div>
                       <h3 className="text-xl font-bold text-white mb-3 font-[family-name:var(--font-heading)] group-hover:text-[var(--color-primary)] transition-colors relative z-10">
                         {service.title}
                       </h3>
@@ -276,7 +293,7 @@ export default async function HomePage() {
           </FadeIn>
 
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {processSteps.map((step, i) => (
+            {dynamicProcessSteps.map((step: ProcessStep, i: number) => (
               <StaggerItem key={step.title}>
                 <div className="glass rounded-2xl p-8 h-full relative group hover:border-[var(--color-primary)]/30 transition-all">
                   {/* Step number */}
@@ -285,9 +302,9 @@ export default async function HomePage() {
                   </div>
                   <h3 className="text-lg font-bold text-white mb-3 font-[family-name:var(--font-heading)]">{step.title}</h3>
                   <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed">{step.description}</p>
-
+ 
                   {/* Arrow connector (hidden on last item and mobile) */}
-                  {i < processSteps.length - 1 && (
+                  {i < dynamicProcessSteps.length - 1 && (
                     <div className="hidden lg:block absolute top-1/2 -right-3 transform -translate-y-1/2 z-10">
                       <ArrowRight size={20} className="text-[var(--color-primary)]/50" />
                     </div>
@@ -309,48 +326,26 @@ export default async function HomePage() {
             <h2 className="font-[family-name:var(--font-heading)] text-3xl md:text-4xl lg:text-5xl font-bold mt-3 text-white">
               {settings.section_social_proof_heading || "Trusted by Forward-Thinking Companies"}
             </h2>
-            <p className="text-[var(--color-text-secondary)] text-lg max-w-2xl mx-auto mt-4">
-              From startups to established enterprises, businesses rely on Genesoft to power their digital transformation
-            </p>
           </FadeIn>
 
-          {/* Client logos carousel */}
           <ClientLogos />
-
-          {/* Testimonial */}
-          <FadeIn delay={0.3}>
-            <div className="glass-strong rounded-3xl p-10 md:p-14 max-w-3xl mx-auto mt-16 text-center gradient-border">
-              <svg className="w-10 h-10 text-[var(--color-primary)] mx-auto mb-6 opacity-50" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-              </svg>
-              <p className="text-[var(--color-text-secondary)] text-lg md:text-xl leading-relaxed italic mb-8">
-                &ldquo;Working with Genesoft transformed how we operate. Their team didn&apos;t just deliver software — they became partners in our growth.&rdquo;
-              </p>
-              <div>
-                <p className="text-white font-[family-name:var(--font-heading)] font-bold">Satisfied Client</p>
-                <p className="text-[var(--color-text-muted)] text-sm">Enterprise Partner</p>
-              </div>
-            </div>
-          </FadeIn>
         </div>
       </section>
 
-      {/* ═══ SECTION 6: RESULTS / CASE STUDIES ═══ */}
-      <section className="py-24 relative">
-        <ParallaxOrb speed={-0.2} className="orb orb-amber w-[250px] h-[250px] bottom-[10%] left-[-5%]" />
-
+      {/* ═══ SECTION 6: PORTFOLIO ═══ */}
+      <section className="py-24 relative overflow-hidden">
         <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-6">
-            <FadeIn>
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+            <FadeIn className="max-w-2xl">
               <span className="text-[var(--color-primary)] font-[family-name:var(--font-heading)] text-sm uppercase tracking-[0.2em] font-medium">
-                {settings.section_work_label || "Results"}
+                {settings.section_portfolio_label || "Portfolio"}
               </span>
-              <h2 className="font-[family-name:var(--font-heading)] text-3xl md:text-4xl lg:text-5xl font-bold mt-3 text-white">
-                {settings.section_work_heading || "Results That Speak for Themselves"}
+              <h2 className="font-[family-name:var(--font-heading)] text-3xl md:text-4xl lg:text-5xl font-bold mt-3 text-white leading-[1.1]">
+                {settings.section_portfolio_heading || "Success Stories We've Built Together"}
               </h2>
             </FadeIn>
             <FadeIn direction="left" delay={0.2}>
-              <Link href="/work" className="flex items-center gap-2 text-[var(--color-primary)] hover:text-white transition-colors pb-2 border-b border-[var(--color-primary)]/30 hover:border-white">
+               <Link href="/work" className="flex items-center gap-2 text-[var(--color-primary)] hover:text-white transition-colors pb-2 border-b border-[var(--color-primary)]/30 hover:border-white">
                 View All Projects <ArrowRight size={16} />
               </Link>
             </FadeIn>
@@ -359,55 +354,47 @@ export default async function HomePage() {
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {!caseStudies || caseStudies.length === 0 ? (
               <div className="col-span-full text-center text-[var(--color-text-muted)] py-12 border border-dashed border-white/10 rounded-xl">
-                <p>Case Studies not yet configured.</p>
+                 <p>Case Studies not yet configured.</p>
               </div>
             ) : (
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
               (caseStudies as any[]).map((study) => (
                 <StaggerItem key={study.id} className="group cursor-pointer">
-                  <div className="glass p-6 rounded-3xl h-full border border-white/5 hover:border-[var(--color-primary)]/30 transition-all duration-500 flex flex-col">
-                    {/* Case Study Image */}
-                    <div className="aspect-video w-full rounded-2xl overflow-hidden mb-6 relative bg-black/20">
-                         {study.case_study_image ? (
-                             // eslint-disable-next-line @next/next/no-img-element
-                             <img 
-                                src={study.case_study_image} 
-                                alt={study.title} 
-                                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" 
-                             />
-                         ) : (
-                             <ImagePlaceholder text="Case Study Image" />
-                         )}
-                         <div className="absolute top-4 right-4">
-                            <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] bg-black/50 backdrop-blur-md border border-[var(--color-primary)]/20 px-3 py-1 rounded-full">
-                                {study.category}
-                            </span>
-                         </div>
-                    </div>
-
-                    <div className="flex-1 flex flex-col justify-between">
-                        <div>
-                            <div className="flex items-start justify-between mb-4">
-                                <h3 className="text-2xl font-bold text-white font-[family-name:var(--font-heading)] group-hover:text-[var(--color-primary)] transition-colors">
-                                    {study.title}
-                                </h3>
-                                <ArrowUpRight className="text-[var(--color-text-muted)] group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all flex-shrink-0 mt-1" />
-                            </div>
-                            <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed mb-6 line-clamp-3">
-                                {study.description}
-                            </p>
-                        </div>
-                        
-                        <div>
-                            <div className="h-px w-full bg-gradient-to-r from-white/10 to-transparent my-4" />
-                            {study.results?.[0] && (
-                                <p className="text-[var(--color-text-secondary)] font-medium">
-                                <span className="text-white font-bold">{study.results[0].value}</span> {study.results[0].label}
-                                </p>
+                  <Link href={`/work/${study.slug}`} className="block h-full">
+                    <div className="glass p-6 rounded-3xl h-full border border-white/5 hover:border-[var(--color-primary)]/30 transition-all duration-500 flex flex-col">
+                        <div className="aspect-video w-full rounded-2xl overflow-hidden mb-6 relative bg-black/20">
+                            {study.case_study_image ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img 
+                                    src={study.case_study_image} 
+                                    alt={study.title} 
+                                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700" 
+                                />
+                            ) : (
+                                <ImagePlaceholder text="Case Study Image" />
                             )}
+                            <div className="absolute top-4 right-4">
+                                <span className="text-xs font-bold uppercase tracking-wider text-[var(--color-primary)] bg-black/50 backdrop-blur-md border border-[var(--color-primary)]/20 px-3 py-1 rounded-full">
+                                    {study.category}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 flex flex-col justify-between">
+                            <div>
+                                <div className="flex items-start justify-between mb-4">
+                                    <h3 className="text-2xl font-bold text-white font-[family-name:var(--font-heading)] group-hover:text-[var(--color-primary)] transition-colors">
+                                        {study.title}
+                                    </h3>
+                                    <ArrowUpRight className="text-[var(--color-text-muted)] group-hover:text-white group-hover:translate-x-1 group-hover:-translate-y-1 transition-all flex-shrink-0 mt-1" />
+                                </div>
+                                <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed mb-6 line-clamp-3">
+                                    {study.description}
+                                </p>
+                            </div>
                         </div>
                     </div>
-                  </div>
+                  </Link>
                 </StaggerItem>
               ))
             )}
@@ -420,7 +407,6 @@ export default async function HomePage() {
         <ParallaxOrb speed={0.6} className="orb orb-orange w-[400px] h-[400px] top-[-20%] left-[20%]" />
         <ParallaxOrb speed={-0.4} className="orb orb-blue w-[300px] h-[300px] bottom-[-20%] right-[10%]" />
 
-        {/* Gradient overlay for high-contrast CTA */}
         <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary)]/5 via-transparent to-[var(--color-accent)]/5" />
 
         <div className="container mx-auto px-6 text-center relative z-10">
@@ -435,15 +421,14 @@ export default async function HomePage() {
               Schedule Your Free Consultation <ArrowRight size={18} />
             </Link>
 
-            {/* Contact info */}
             <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 mt-12 text-[var(--color-text-secondary)]">
-              <a href="tel:+918888885285" className="flex items-center gap-2 hover:text-white transition-colors">
+              <a href={`tel:${settings.contact_phone || '+918888885285'}`} className="flex items-center gap-2 hover:text-white transition-colors">
                 <Phone size={18} className="text-[var(--color-primary)]" />
-                <span className="text-sm">+91 88888 85285</span>
+                <span className="text-sm">{settings.contact_phone || "+91 88888 85285"}</span>
               </a>
-              <a href="mailto:info@genesoftinfotech.com" className="flex items-center gap-2 hover:text-white transition-colors">
+              <a href={`mailto:${settings.contact_email || 'info@genesoftinfotech.com'}`} className="flex items-center gap-2 hover:text-white transition-colors">
                 <Mail size={18} className="text-[var(--color-primary)]" />
-                <span className="text-sm">info@genesoftinfotech.com</span>
+                <span className="text-sm">{settings.contact_email || "info@genesoftinfotech.com"}</span>
               </a>
               <div className="flex items-center gap-2">
                 <Clock size={18} className="text-[var(--color-primary)]" />

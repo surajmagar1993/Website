@@ -17,7 +17,7 @@ export default function GeometricGrid() {
     let animationFrameId: number;
 
     // Grid parameters
-    const gridSize = 40; // Size of grid cells
+    // Grid parameters
     
     // Perspective parameters
     const horizonY = height * 0.4; // Horizon line height

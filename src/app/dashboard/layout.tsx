@@ -1,35 +1,19 @@
 "use client";
 
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [role, setRole] = useState<string | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+  const { profile, loading, user } = useProfile();
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push("/login");
-        return;
-      }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-      
-      setRole(profile?.role);
-      setLoading(false);
-    };
-
-    checkUser();
-  }, [router]);
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
 
   if (loading) {
      return (
@@ -41,7 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] flex">
-      <DashboardSidebar userRole={role} />
+      <DashboardSidebar userRole={profile?.role} />
       <main className="flex-1 p-4 md:p-8 md:ml-64 transition-all duration-300">
         {children}
       </main>

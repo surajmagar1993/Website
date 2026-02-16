@@ -27,7 +27,6 @@ export function HyperText({
   },
   className,
   animateOnLoad = true,
-  ...props
 }: HyperTextProps) {
   const [displayText, setDisplayText] = useState(text.split(""));
   const [trigger, setTrigger] = useState(false);
@@ -69,11 +68,10 @@ export function HyperText({
   return (
     <div
       className={cn(
-        "inline-flex scale-100 py-2 justify-center text-4xl font-bold tracking-tighter sm:text-5xl",
+        "inline-flex scale-100 py-2 justify-center text-4xl font-bold tracking-tighter sm:text-5xl cursor-default",
         className
       )}
       onMouseEnter={triggerAnimation}
-      style={{ cursor: "default", ...props.style }}
     >
       <AnimatePresence mode="popLayout">
         {displayText.map((letter, i) => (

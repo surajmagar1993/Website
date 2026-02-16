@@ -33,7 +33,7 @@ export default function NeuralNetwork({
     let animationFrameId: number;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let particles: any[] = [];
-    let mouse = { x: -9999, y: -9999 };
+    const mouse = { x: -9999, y: -9999 };
 
     const resizeCanvas = () => {
       canvas.width = container.offsetWidth;

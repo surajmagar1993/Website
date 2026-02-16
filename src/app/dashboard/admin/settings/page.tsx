@@ -400,6 +400,43 @@ export default function AdminSettingsPage() {
                             icon={<span className="text-lg font-bold">H2</span>}
                         />
                     </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <InputGroup 
+                            label="Portfolio — Label" 
+                            value={settings.section_portfolio_label} 
+                            onChange={(v) => handleChange('section_portfolio_label', v)} 
+                            icon={<span className="text-lg font-bold">Tag</span>}
+                        />
+                        <InputGroup 
+                            label="Portfolio — Heading" 
+                            value={settings.section_portfolio_heading} 
+                            onChange={(v) => handleChange('section_portfolio_heading', v)} 
+                            icon={<span className="text-lg font-bold">H2</span>}
+                        />
+                    </div>
+
+                    <h3 className="text-xl font-bold text-white mt-10 mb-4 border-b border-white/10 pb-2">Advanced Section Content (JSON)</h3>
+                    <p className="text-sm text-[var(--color-text-muted)] mb-6 bg-[var(--color-primary)]/5 p-4 rounded-xl border border-[var(--color-primary)]/10">
+                        Edit the raw list data for Value Propositions and the Process section here. 
+                        <strong>Caution:</strong> Must be valid JSON format.
+                    </p>
+
+                    <div className="space-y-6">
+                        <InputGroup 
+                            label="Value Propositions JSON" 
+                            value={settings.value_props_json} 
+                            onChange={(v) => handleChange('value_props_json', v)} 
+                            icon={<span className="text-lg font-bold">{}</span>}
+                            textarea
+                        />
+                        <InputGroup 
+                            label="Process Steps JSON" 
+                            value={settings.process_steps_json} 
+                            onChange={(v) => handleChange('process_steps_json', v)} 
+                            icon={<span className="text-lg font-bold">{}</span>}
+                            textarea
+                        />
+                    </div>
                 </div>
             )}
 
