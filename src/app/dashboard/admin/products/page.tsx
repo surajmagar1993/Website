@@ -1442,7 +1442,7 @@ export default function AdminProductsPage() {
                                                 <p className="font-semibold text-white text-sm leading-tight">{product.name}</p>
                                                 {product.model && <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{product.model}</p>}
                                             </div>
-                                            <div className="relative">
+                                            <div className="relative" data-status-toggle>
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setActiveStatusToggleId(activeStatusToggleId === product.id ? null : product.id) }}
                                                     className={`shrink-0 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] uppercase font-bold tracking-wider border transition-all ${
@@ -1692,7 +1692,7 @@ export default function AdminProductsPage() {
                         <div>
                             <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3 block">Filter by Status</label>
                             <div className="grid grid-cols-2 gap-2">
-                                {['all', 'available', 'rented', 'maintenance'].map(s => (
+                                {['all', 'available', 'rented', 'maintenance', 'retired'].map(s => (
                                     <div
                                         key={s}
                                         onClick={() => { setStatusFilter(s); setCurrentPage(1); }}
