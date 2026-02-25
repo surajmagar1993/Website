@@ -1,0 +1,97 @@
+
+> genesoft-website@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.7.21:3000
+- Environments: .env.local
+
+✓ Starting...
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+✓ Ready in 2.1s
+ GET / 200 in 4.9s (compile: 1105ms, render: 3.8s)
+ GET /apple-touch-icon.png 404 in 354ms (compile: 55ms, render: 299ms)
+ GET /apple-touch-icon-precomposed.png 404 in 387ms (compile: 66ms, render: 320ms)
+ GET /apple-touch-icon.png 404 in 267ms (compile: 4ms, render: 263ms)
+ GET /apple-touch-icon-precomposed.png 404 in 1656ms (compile: 76ms, render: 1580ms)
+ GET / 200 in 1692ms (compile: 6ms, render: 1686ms)
+ GET / 200 in 1032ms (compile: 223ms, render: 809ms)
+✓ Compiled in 203ms
+ GET / 200 in 3.1s (compile: 156ms, render: 2.9s)
+ GET / 200 in 1059ms (compile: 161ms, render: 898ms)
+✓ Compiled in 173ms
+ GET / 200 in 1252ms (compile: 173ms, render: 1079ms)
+✓ Compiled in 97ms
+ GET / 200 in 1131ms (compile: 129ms, render: 1002ms)
+ GET / 200 in 2.5s (compile: 3ms, render: 2.5s)
+ GET / 200 in 1212ms (compile: 127ms, render: 1085ms)
+ GET / 200 in 1115ms (compile: 119ms, render: 996ms)
+ GET / 200 in 2.9s (compile: 7ms, render: 2.9s)
+✓ Compiled in 104ms
+ GET / 200 in 2.3s (compile: 147ms, render: 2.2s)
+ GET / 200 in 987ms (compile: 159ms, render: 828ms)
+ GET /login 200 in 1079ms (compile: 38ms, render: 1041ms)
+ GET /login 200 in 477ms (compile: 3ms, render: 474ms)
+ GET / 200 in 2.0s (compile: 7ms, render: 2.0s)
+ GET /about 200 in 1667ms (compile: 1378ms, render: 289ms)
+ GET /services 200 in 886ms (compile: 70ms, render: 816ms)
+ GET / 200 in 980ms (compile: 9ms, render: 971ms)
+ GET /login 200 in 278ms (compile: 8ms, render: 270ms)
+ GET / 200 in 1147ms (compile: 5ms, render: 1142ms)
+✓ Compiled in 81ms
+ GET /login 200 in 472ms (compile: 130ms, render: 342ms)
+ GET /dashboard 200 in 1758ms (compile: 88ms, proxy.ts: 1087ms, render: 584ms)
+ GET /dashboard/catalog 200 in 715ms (compile: 36ms, proxy.ts: 320ms, render: 359ms)
+ GET / 200 in 1586ms (compile: 8ms, render: 1578ms)
+ GET /login 200 in 269ms (compile: 6ms, render: 263ms)
+ GET /dashboard 200 in 517ms (compile: 11ms, proxy.ts: 232ms, render: 274ms)
+ GET /dashboard 200 in 952ms (compile: 13ms, proxy.ts: 644ms, render: 295ms)
+ GET /login 200 in 307ms (compile: 5ms, render: 302ms)
+ GET /login 200 in 641ms (compile: 2ms, render: 639ms)
+ GET /dashboard 200 in 721ms (compile: 13ms, proxy.ts: 407ms, render: 301ms)
+ GET /dashboard/admin 200 in 831ms (compile: 94ms, proxy.ts: 495ms, render: 242ms)
+ GET /dashboard/admin 200 in 1340ms (compile: 6ms, proxy.ts: 1049ms, render: 285ms)
+Error fetching activity logs: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.system_logs'",
+  message: "Could not find the table 'public.activity_logs' in the schema cache"
+}
+ POST /dashboard/admin 200 in 2.6s (compile: 4ms, proxy.ts: 495ms, render: 2.1s)
+Error fetching activity logs: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.system_logs'",
+  message: "Could not find the table 'public.activity_logs' in the schema cache"
+}
+ POST /dashboard/admin 200 in 4.0s (compile: 5ms, proxy.ts: 695ms, render: 3.3s)
+ GET /dashboard/admin/inquiries 200 in 1153ms (compile: 47ms, proxy.ts: 799ms, render: 308ms)
+ GET /dashboard/admin/inquiries 200 in 1059ms (compile: 7ms, proxy.ts: 771ms, render: 281ms)
+ GET /dashboard/admin/inquiries 200 in 808ms (compile: 5ms, proxy.ts: 529ms, render: 275ms)
+ GET /dashboard/admin 200 in 995ms (compile: 6ms, proxy.ts: 681ms, render: 308ms)
+Error fetching activity logs: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.system_logs'",
+  message: "Could not find the table 'public.activity_logs' in the schema cache"
+}
+ POST /dashboard/admin 200 in 3.5s (compile: 5ms, proxy.ts: 639ms, render: 2.8s)
+Error fetching activity logs: {
+  code: 'PGRST205',
+  details: null,
+  hint: "Perhaps you meant the table 'public.system_logs'",
+  message: "Could not find the table 'public.activity_logs' in the schema cache"
+}
+ POST /dashboard/admin 200 in 3.3s (compile: 4ms, proxy.ts: 735ms, render: 2.6s)
+ GET /dashboard/admin/products 200 in 1186ms (compile: 79ms, proxy.ts: 794ms, render: 314ms)
+ GET /dashboard/admin/products 200 in 1387ms (compile: 4ms, proxy.ts: 1089ms, render: 293ms)
+ GET /dashboard/admin/products 200 in 1238ms (compile: 8ms, proxy.ts: 982ms, render: 248ms)
+ GET /dashboard/admin/products 200 in 864ms (compile: 5ms, proxy.ts: 541ms, render: 317ms)
+✓ Compiled in 143ms
+ GET /dashboard/admin/products 200 in 1025ms (compile: 107ms, proxy.ts: 892ms, render: 26ms)
+✓ Compiled in 177ms
+ GET /dashboard/admin/products 200 in 757ms (compile: 73ms, proxy.ts: 666ms, render: 19ms)
+✓ Compiled in 67ms
+✓ Compiled in 59ms
+ HEAD / 200 in 2.4s (compile: 9ms, render: 2.4s)

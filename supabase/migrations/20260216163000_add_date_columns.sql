@@ -1,0 +1,4 @@
+-- Add date columns to products table
+ALTER TABLE products ADD COLUMN IF NOT EXISTS assigned_date TIMESTAMP WITH TIME ZONE;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS replacement_date TIMESTAMP WITH TIME ZONE;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS return_date TIMESTAMP WITH TIME ZONE;
