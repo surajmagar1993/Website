@@ -95,6 +95,7 @@ export default function AdminProductsPage() {
   const [clientFilter, setClientFilter] = useState("all");
   const [modelFilter, setModelFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [specFilterKey, setSpecFilterKey] = useState("");
   const [specFilterValue, setSpecFilterValue] = useState("");
 
@@ -259,8 +260,21 @@ export default function AdminProductsPage() {
       toast.success(`Status → ${nextStatus}`);
       fetchProducts();
       setActiveStatusToggleId(null);
+    } else {
+      toast.error(`Failed to update status: ${error.message}`);
     }
   };
+
+  // Close status dropdown on outside click
+  useEffect(() => {
+    if (!activeStatusToggleId) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-status-toggle]')) setActiveStatusToggleId(null);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [activeStatusToggleId]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -400,11 +414,12 @@ export default function AdminProductsPage() {
     const matchesClient = clientFilter === "all" ? true : p.current_client_id === clientFilter;
     const matchesCategory = categoryFilter === "all" ? true : p.category === categoryFilter;
     const matchesModel = modelFilter === "all" ? true : p.model === modelFilter;
+    const matchesStatus = statusFilter === "all" ? true : p.status === statusFilter;
     
     const matchesSpecFilter = (!specFilterKey || (!specFilterValue)) ? true :
         (p.specifications && p.specifications[specFilterKey] && p.specifications[specFilterKey].toLowerCase().includes(specFilterValue.toLowerCase()));
     
-    return matchesSearch && matchesClient && matchesCategory && matchesModel && matchesSpecFilter;
+    return matchesSearch && matchesClient && matchesCategory && matchesModel && matchesStatus && matchesSpecFilter;
   }).sort((a, b) => {
     if (!sortField) return 0;
     const aVal = (a[sortField as keyof Product] ?? '') as string;
@@ -591,7 +606,12 @@ export default function AdminProductsPage() {
     e.stopPropagation();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      processCsvFile(e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+        toast.error('Please drop a .csv file');
+        return;
+      }
+      processCsvFile(file);
     }
   };
 
@@ -606,7 +626,6 @@ export default function AdminProductsPage() {
     if (selectedIds.size === 0 || isPrintingBarcode) return;
     setIsPrintingBarcode(true);
     try {
-        const { jsPDF } = await import('jspdf');
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const doc = new jsPDF() as any;
         const selectedProducts = products.filter(p => selectedIds.has(p.id));
@@ -627,11 +646,13 @@ export default function AdminProductsPage() {
             
             try {
                 const response = await fetch(barcodeUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const blob = await response.blob();
                 const reader = new FileReader();
-                const base64data = await new Promise<string>((resolve) => {
-                    reader.readAsDataURL(blob); 
+                const base64data = await new Promise<string>((resolve, reject) => {
                     reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = () => reject(new Error(`FileReader failed for ${p.name}`));
+                    reader.readAsDataURL(blob);
                 });
                 
                 doc.addImage(base64data, 'PNG', x, y, width, height);
@@ -1227,7 +1248,7 @@ export default function AdminProductsPage() {
                                    <button 
                                      onClick={() => {
                                         setSearch(""); setDebouncedSearch("");
-                                        setCategoryFilter('all');
+                                        setCategoryFilter('all'); setStatusFilter('all');
                                         setClientFilter('all'); setModelFilter('all');
                                         setSpecFilterKey(''); setSpecFilterValue('');
                                      }} 
@@ -1278,7 +1299,7 @@ export default function AdminProductsPage() {
                                                  <span className="text-[var(--color-text-muted)] font-mono text-[11px]">SN: {product.serial_number}</span>
                                              </div>
                                          </td>
-                                         <td className="p-3 align-middle relative">
+                                         <td className="p-3 align-middle relative" data-status-toggle>
                                              <button
                                                onClick={() => setActiveStatusToggleId(activeStatusToggleId === product.id ? null : product.id)}
                                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider border whitespace-nowrap transition-all ${
@@ -1386,7 +1407,7 @@ export default function AdminProductsPage() {
                             <button 
                                 onClick={() => {
                                     setSearch(""); setDebouncedSearch("");
-                                    setCategoryFilter('all');
+                                    setCategoryFilter('all'); setStatusFilter('all');
                                     setClientFilter('all'); setModelFilter('all');
                                     setSpecFilterKey(''); setSpecFilterValue('');
                                 }} 
@@ -1531,10 +1552,10 @@ export default function AdminProductsPage() {
                 <p className="text-[var(--color-text-muted)] text-xs mb-5">{p.asset_id || p.id}</p>
                 <div className="bg-white rounded-xl p-4 mx-auto w-fit mb-5">
                   <div className="w-40 h-16 bg-black flex flex-col justify-between p-1">
-                      {/* Placeholder Barcode visual */}
+                      {/* Deterministic Barcode visual */}
                       <div className="w-full h-full flex items-center justify-between opacity-80">
                          {Array.from({length: 20}).map((_, i) => (
-                             <div key={i} className={`h-full bg-white ${Math.random() > 0.5 ? 'w-1' : 'w-0.5'}`}></div>
+                             <div key={i} className={`h-full bg-white ${i % 3 === 0 ? 'w-1' : 'w-0.5'}`}></div>
                          ))}
                       </div>
                   </div>
@@ -1671,13 +1692,20 @@ export default function AdminProductsPage() {
                         <div>
                             <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3 block">Filter by Status</label>
                             <div className="grid grid-cols-2 gap-2">
-                                {/* Currently using a combined client filter to handle status conceptually - extending would require more state. Using existing states for UI presentation only */}
-                                <div className="p-3 border border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 rounded-xl text-white text-sm font-medium flex items-center justify-between cursor-pointer">
-                                    All Statuses <CheckSquare size={16} className="text-[var(--color-primary)]" />
-                                </div>
-                                <div className="p-3 border border-white/10 bg-white/5 rounded-xl text-[var(--color-text-muted)] hover:text-white hover:border-white/20 transition-colors text-sm font-medium cursor-pointer">
-                                    Available Only
-                                </div>
+                                {['all', 'available', 'rented', 'maintenance'].map(s => (
+                                    <div
+                                        key={s}
+                                        onClick={() => { setStatusFilter(s); setCurrentPage(1); }}
+                                        className={`p-3 border rounded-xl text-sm font-medium flex items-center justify-between cursor-pointer transition-colors ${
+                                            statusFilter === s
+                                                ? 'border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 text-white'
+                                                : 'border-white/10 bg-white/5 text-[var(--color-text-muted)] hover:text-white hover:border-white/20'
+                                        }`}
+                                    >
+                                        {s === 'all' ? 'All Statuses' : s.charAt(0).toUpperCase() + s.slice(1)}
+                                        {statusFilter === s && <CheckSquare size={16} className="text-[var(--color-primary)]" />}
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
@@ -1864,7 +1892,7 @@ export default function AdminProductsPage() {
                                 <h5 className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Hardware Specifications</h5>
                                 <div className="bg-white/5 border border-white/5 rounded-xl overflow-hidden divide-y divide-white/5">
                                     {Object.entries(p.specifications).map(([key, value]) => (
-                                        <div key={key} className="flex flex-col sm:flex-row sm:items-center py-3 px-4 px-4 hover:bg-white/5 transition-colors">
+                                        <div key={key} className="flex flex-col sm:flex-row sm:items-center py-3 px-4 hover:bg-white/5 transition-colors">
                                             <span className="text-xs text-[var(--color-text-muted)] w-1/3 shrink-0">{key}</span>
                                             <span className="text-sm text-white font-medium mt-1 sm:mt-0">{value as string}</span>
                                         </div>
