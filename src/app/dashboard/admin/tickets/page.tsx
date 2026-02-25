@@ -5,18 +5,34 @@ import { supabase } from "@/lib/supabase";
 import { ArrowLeft, MessageSquare, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import TicketList from "@/components/dashboard/TicketList";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AdminTicketsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("all");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [ticketsData, setTicketsData] = useState<any[]>([]);
 
   useEffect(() => {
-      const getUser = async () => {
+      const fetchInitialData = async () => {
           const { data: { user } } = await supabase.auth.getUser();
           setUser(user);
+          if (user) {
+              const { data } = await supabase.from('tickets').select('status');
+              if (data) setTicketsData(data);
+          }
       };
-      getUser();
+      
+      fetchInitialData();
+
+      const channel = supabase.channel('tickets-admin-stats')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, async () => {
+            const { data } = await supabase.from('tickets').select('status');
+            if (data) setTicketsData(data);
+        }).subscribe();
+        
+      return () => { supabase.removeChannel(channel); }
   }, []);
 
   if (!user) return (
@@ -35,6 +51,56 @@ export default function AdminTicketsPage() {
             <h1 className="text-3xl font-bold text-white tracking-tight">Support Tickets</h1>
             <p className="text-[var(--color-text-secondary)] mt-1 text-sm">Manage customer inquiries and support issues</p>
           </div>
+        </div>
+
+        {/* Stat Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="glass border-white/10 bg-black/20 text-white">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Total Tickets</CardTitle>
+              <MessageSquare size={18} className="text-white" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{ticketsData.length}</div>
+              <p className="text-xs text-gray-500 mt-1">All time</p>
+            </CardContent>
+          </Card>
+          <Card className="glass border-white/10 bg-black/20 text-white">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Pending</CardTitle>
+              <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-orange-500">
+                  {ticketsData.filter(t => t.status === 'open' || t.status === 'in_progress').length}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Open & In Progress</p>
+            </CardContent>
+          </Card>
+          <Card className="glass border-white/10 bg-black/20 text-white">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Resolved</CardTitle>
+              <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-500">
+                  {ticketsData.filter(t => t.status === 'resolved').length}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Awaiting closure</p>
+            </CardContent>
+          </Card>
+          <Card className="glass border-white/10 bg-black/20 text-white">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-400">Closed</CardTitle>
+              <div className="w-2.5 h-2.5 rounded-full bg-gray-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-500">
+                  {ticketsData.filter(t => t.status === 'closed').length}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Archived tickets</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Tabs */}

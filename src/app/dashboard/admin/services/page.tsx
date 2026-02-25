@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Edit2, Save, X, CheckCircle, AlertCircle, LayoutGrid, ChevronDown, ChevronUp, Eye } from "lucide-react";
 import * as Icons from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
-
+import { CardSkeleton } from "@/components/ui/Skeletons";
 interface PainPoint { title: string; description: string }
 interface Solution { title: string; description: string; features: string[] }
 interface Benefit { title: string; description: string }
@@ -194,7 +194,7 @@ export default function ServicesPage() {
         {/* Service Cards Grid */}
         <div className="glass rounded-2xl overflow-hidden border border-white/5">
             {loading ? (
-                <div className="p-12 text-center text-[var(--color-text-muted)]">Loading services...</div>
+                <div className="p-6"><CardSkeleton count={3} /></div>
             ) : services.length === 0 ? (
                 <div className="p-12 text-center">
                     <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-[var(--color-text-muted)]">

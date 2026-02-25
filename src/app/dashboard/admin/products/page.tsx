@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { Search, Plus, Edit, Trash2, Package, ArrowLeft, Monitor, Loader2, FileSpreadsheet, CheckSquare, HardDrive, Tag, ChevronUp, ChevronDown, Upload, QrCode, Wrench, History } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Package, ArrowLeft, Monitor, Loader2, FileSpreadsheet, CheckSquare, HardDrive, Tag, ChevronUp, ChevronDown, Upload, Barcode, Wrench, History, Filter, X, Info, Download, Printer, Cpu } from "lucide-react";
 import Link from "next/link";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -103,7 +103,7 @@ export default function AdminProductsPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   // Hover panel state
-  const [hoveredProductId, setHoveredProductId] = useState<string | null>(null);
+  // const [hoveredProductId, setHoveredProductId] = useState<string | null>(null);
 
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -122,7 +122,7 @@ export default function AdminProductsPage() {
   const csvInputRef = useRef<HTMLInputElement>(null);
 
   // QR Code modal
-  const [qrProductId, setQrProductId] = useState<string | null>(null);
+  const [barcodeProductId, setBarcodeProductId] = useState<string | null>(null);
 
   // Maintenance mode
   const [showMaintenanceModal, setShowMaintenanceModal] = useState<string | null>(null);
@@ -132,6 +132,22 @@ export default function AdminProductsPage() {
   // History modal
   const [showHistoryModal, setShowHistoryModal] = useState<string | null>(null);
   const [historyData, setHistoryData] = useState<{id:string;assigned_date:string;client_id:string;status:string}[]>([]);
+
+  // Filter Drawer
+  const [showFilterDrawer, setShowFilterDrawer] = useState(false);
+
+  // View Details
+  const [viewDetailsId, setViewDetailsId] = useState<string | null>(null);
+
+  // Quick Status Toggle
+  const [activeStatusToggleId, setActiveStatusToggleId] = useState<string | null>(null);
+
+  // Import Modal
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+
+  // Bulk Barcode Print
+  const [isPrintingBarcode, setIsPrintingBarcode] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -176,6 +192,9 @@ export default function AdminProductsPage() {
         setShowAssignModal(null);
         setShowReturnConfirm(null);
         setShowBulkDeleteConfirm(false);
+        setShowFilterDrawer(false);
+        setViewDetailsId(null);
+        setShowImportModal(false);
       }
       if (e.key === 'n' && !e.metaKey && !e.ctrlKey && !showForm && !showCategoryModal) {
         const tag = (document.activeElement as HTMLElement)?.tagName;
@@ -233,14 +252,13 @@ export default function AdminProductsPage() {
     setShowForm(true);
   };
 
-  const handleQuickStatusToggle = async (product: Product) => {
-    const nextStatus = product.status === 'available' ? 'rented' :
-                       product.status === 'rented' ? 'available' : product.status;
+  const handleQuickStatusToggle = async (product: Product, nextStatus: string) => {
     if (nextStatus === product.status) return;
     const { error } = await supabase.from('products').update({ status: nextStatus }).eq('id', product.id);
     if (!error) {
       toast.success(`Status → ${nextStatus}`);
       fetchProducts();
+      setActiveStatusToggleId(null);
     }
   };
 
@@ -520,14 +538,13 @@ export default function AdminProductsPage() {
   };
 
 
-  // CSV Import
-  const handleCsvImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // CSV Import Logic & Drag Drop
+  const processCsvFile = async (file: File) => {
     setIsImporting(true);
     try {
       const text = await file.text();
       const lines = text.trim().split('\n');
+      if (lines.length < 2) throw new Error("File seems empty or missing headers");
       const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/[^a-z_]/g, '_'));
       let created = 0;
       for (let i = 1; i < lines.length; i++) {
@@ -550,11 +567,105 @@ export default function AdminProductsPage() {
       }
       toast.success(`Imported ${created} products from CSV`);
       fetchProducts();
+      setShowImportModal(false);
     } catch (err) {
       toast.error('CSV import failed: ' + (err as Error).message);
     }
     setIsImporting(false);
     if (csvInputRef.current) csvInputRef.current.value = '';
+  };
+
+  const handleCsvImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) processCsvFile(e.target.files[0]);
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
+    else if (e.type === "dragleave") setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processCsvFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const downloadSampleCsv = () => {
+    const content = "Name,Category,Asset_ID,Serial_Number,Model,Brand,Status,Description\nSample Laptop,Laptop,LAP-001,SN-12345,XPS 15,Dell,available,Test item\n";
+    const blob = new Blob([content], { type: 'text/csv' });
+    downloadFile(blob, 'Genesoft_Inventory_Template.csv');
+  };
+
+  // Bulk Barcode Print
+  const printBulkBarcodes = async () => {
+    if (selectedIds.size === 0 || isPrintingBarcode) return;
+    setIsPrintingBarcode(true);
+    try {
+        const { jsPDF } = await import('jspdf');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const doc = new jsPDF() as any;
+        const selectedProducts = products.filter(p => selectedIds.has(p.id));
+        
+        doc.setFontSize(16);
+        doc.text("Asset Barcodes", 10, 15);
+        
+        let x = 10;
+        let y = 25;
+        const width = 55;
+        const height = 20;
+        const xSpacing = 10;
+        const ySpacing = 15;
+        
+        for (let i = 0; i < selectedProducts.length; i++) {
+            const p = selectedProducts[i];
+            const barcodeUrl = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(p.asset_id || p.id)}`;
+            
+            try {
+                const response = await fetch(barcodeUrl);
+                const blob = await response.blob();
+                const reader = new FileReader();
+                const base64data = await new Promise<string>((resolve) => {
+                    reader.readAsDataURL(blob); 
+                    reader.onloadend = () => resolve(reader.result as string);
+                });
+                
+                doc.addImage(base64data, 'PNG', x, y, width, height);
+                
+                doc.setFontSize(8);
+                doc.text(p.name.substring(0, 20), x, y + height + 4);
+                doc.setFontSize(7);
+                doc.text(p.asset_id || p.id.substring(0, 8), x, y + height + 8);
+                
+                x += width + xSpacing;
+                if (x > 180) {
+                    x = 10;
+                    y += height + ySpacing + 5;
+                }
+                if (y > 260) {
+                    doc.addPage();
+                    x = 10;
+                    y = 20;
+                }
+            } catch (err) {
+                console.error("Failed to fetch Barcode for", p.name, err);
+                doc.rect(x, y, width, height);
+                doc.text("Barcode Error", x + 5, y + height/2);
+            }
+        }
+        
+        const pdfBlob = doc.output('blob');
+        downloadFile(pdfBlob, `Asset_Barcodes_${new Date().toISOString().split('T')[0]}.pdf`);
+        toast.success("Barcodes generated successfully");
+    } catch (err) {
+        console.error("Bulk Barcode failure:", err);
+        toast.error("Failed to generate Barcodes");
+    }
+    setIsPrintingBarcode(false);
   };
 
   // Show assignment history
@@ -594,17 +705,14 @@ export default function AdminProductsPage() {
             <p className="text-[var(--color-text-secondary)] mt-1 text-sm">Manage hardware assets, categories, and assignments.</p>
           </div>
           <div className="flex items-center gap-3 flex-wrap md:flex-nowrap">
-            {/* Hidden CSV input */}
-            <input ref={csvInputRef} type="file" accept=".csv" className="hidden" title="Import CSV" onChange={handleCsvImport} />
             <button
               type="button"
-              onClick={() => csvInputRef.current?.click()}
-              disabled={isImporting}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 text-[var(--color-text-muted)] hover:text-white hover:bg-white/5 transition-all text-sm font-medium whitespace-nowrap disabled:opacity-50"
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 text-[var(--color-text-muted)] hover:text-white hover:bg-white/5 transition-all text-sm font-medium whitespace-nowrap"
               title="Import products from CSV file"
             >
-              {isImporting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-              {isImporting ? 'Importing...' : 'CSV Import'}
+              <Upload size={16} />
+              CSV Import
             </button>
             <button 
                 type="button"
@@ -675,6 +783,14 @@ export default function AdminProductsPage() {
                    {selectedIds.size} product{selectedIds.size > 1 ? 's' : ''} selected
                </div>
                <div className="flex flex-wrap items-center gap-2">
+                   <button 
+                       onClick={printBulkBarcodes}
+                       disabled={isPrintingBarcode || isBulkActing}
+                       className="bg-purple-500/20 text-purple-400 hover:bg-purple-500/40 px-4 py-2 rounded-lg font-bold text-sm transition-colors border border-purple-500/20 flex items-center gap-2 disabled:opacity-50 whitespace-nowrap"
+                   >
+                       {isPrintingBarcode ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
+                       Print Barcodes
+                   </button>
                    <select 
                         className="bg-black/40 border border-[var(--color-primary)]/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-[var(--color-primary)] text-sm disabled:opacity-50"
                         onChange={(e) => { if (e.target.value) handleBulkStatusUpdate(e.target.value); e.target.value = ""; }}
@@ -703,76 +819,33 @@ export default function AdminProductsPage() {
 
         {/* Search & Filter Bar */}
         <div className="flex flex-col lg:flex-row gap-4 mb-4">
-            <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={20} />
-                <input 
-                    type="text" 
-                    placeholder="Search products..." 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors h-full min-h-[42px]"
-                    value={search}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                />
-            </div>
-            
-            <div className="w-full md:w-48 lg:w-48">
-                <select 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]/50 h-full min-h-[42px]"
-                    value={clientFilter}
-                    onChange={(e) => { setClientFilter(e.target.value); setCurrentPage(1); }}
-                    aria-label="Filter by Client"
+            <div className="flex gap-2 flex-1">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]" size={20} />
+                    <input 
+                        type="text" 
+                        placeholder="Search products..." 
+                        className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]/50 transition-colors h-full min-h-[42px]"
+                        value={search}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                    />
+                </div>
+                <button 
+                    onClick={() => setShowFilterDrawer(true)}
+                    className={`flex items-center justify-center gap-2 px-4 rounded-xl border transition-all h-full min-h-[42px] whitespace-nowrap ${
+                        (clientFilter !== 'all' || categoryFilter !== 'all' || modelFilter !== 'all' || specFilterKey) 
+                        ? 'bg-[var(--color-primary)]/20 border-[var(--color-primary)]/50 text-white font-bold' 
+                        : 'bg-white/5 border-white/10 text-[var(--color-text-muted)] hover:text-white hover:bg-white/10'
+                    }`}
                 >
-                    <option value="all">All Clients</option>
-                    {clients.map(c => (
-                        <option key={c.id} value={c.id}>{c.full_name}</option>
-                    ))}
-                </select>
-            </div>
-
-            <div className="w-full md:w-36 lg:w-40">
-                <select 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]/50 h-full min-h-[42px]"
-                    value={categoryFilter}
-                    onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
-                    aria-label="Filter by Category"
-                >
-                    <option value="all">All Categories</option>
-                    {categories.map(c => (
-                        <option key={c.id} value={c.name}>{c.name}</option>
-                    ))}
-                </select>
-            </div>
-
-            <div className="w-full md:w-36 lg:w-40">
-                <select 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]/50 h-full min-h-[42px]"
-                    value={modelFilter}
-                    onChange={(e) => { setModelFilter(e.target.value); setCurrentPage(1); }}
-                    aria-label="Filter by Model"
-                >
-                    <option value="all">All Models</option>
-                    {uniqueModels.map(m => (
-                        <option key={m} value={m}>{m}</option>
-                    ))}
-                </select>
-            </div>
-
-            {/* Specification Filter */}
-            <div className="flex gap-2 w-full md:flex-1 lg:max-w-md">
-                <input 
-                    type="text" 
-                    placeholder="Spec Key (e.g. RAM)..."
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--color-primary)]/50 h-full min-h-[42px]"
-                    value={specFilterKey}
-                    onChange={(e) => { setSpecFilterKey(e.target.value); if(!e.target.value) setSpecFilterValue(""); setCurrentPage(1); }}
-                />
-                <input 
-                    type="text" 
-                    placeholder="Spec Value..."
-                    disabled={!specFilterKey}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--color-primary)]/50 h-full disabled:opacity-50 min-h-[42px]"
-                    value={specFilterValue}
-                    onChange={(e) => { setSpecFilterValue(e.target.value); setCurrentPage(1); }}
-                />
+                    <Filter size={18} />
+                    <span className="hidden md:inline">Filters</span>
+                    {(clientFilter !== 'all' || categoryFilter !== 'all' || modelFilter !== 'all' || specFilterKey) && (
+                        <span className="w-5 h-5 flex items-center justify-center rounded-full bg-[var(--color-primary)] text-black text-[10px] font-black ml-1">
+                            {[clientFilter !== 'all', categoryFilter !== 'all', modelFilter !== 'all', !!specFilterKey].filter(Boolean).length}
+                        </span>
+                    )}
+                </button>
             </div>
 
             <div className="flex gap-2">
@@ -1140,21 +1213,38 @@ export default function AdminProductsPage() {
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {filteredProducts.length === 0 ? (
-                             <tr><td colSpan={7} className="p-16 text-center">
-                               <div className="flex flex-col items-center gap-3">
-                                 <div className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center">
-                                   <Package size={26} className="text-[var(--color-text-muted)]" />
+                             <tr><td colSpan={7} className="p-16">
+                               <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto py-8">
+                                 <div className="w-20 h-20 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center mb-6 relative">
+                                   <div className="absolute inset-0 rounded-full border border-[var(--color-primary)]/20 animate-ping opacity-20"></div>
+                                   <Search size={32} className="text-[var(--color-primary)] relative z-10" />
                                  </div>
-                                 <p className="text-white font-medium">No products found</p>
-                                 <p className="text-sm text-[var(--color-text-muted)]">Try adjusting your search or filter criteria</p>
+                                 <h3 className="text-xl font-bold text-white mb-2">No hardware found</h3>
+                                 <p className="text-[var(--color-text-muted)] mb-6">
+                                   We couldn&apos;t find any products matching your current filters. Try adjusting your search or clear filters to see all inventory.
+                                 </p>
+                                 <div className="flex gap-3">
+                                   <button 
+                                     onClick={() => {
+                                        setSearch(""); setDebouncedSearch("");
+                                        setCategoryFilter('all');
+                                        setClientFilter('all'); setModelFilter('all');
+                                        setSpecFilterKey(''); setSpecFilterValue('');
+                                     }} 
+                                     className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors font-medium text-sm"
+                                   >
+                                     Clear Filters
+                                   </button>
+                                   <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-black rounded-lg transition-colors font-bold text-sm">
+                                     Add Product
+                                   </button>
+                                 </div>
                                </div>
                              </td></tr>
                          ) : (
                                  currentItems.map((product) => (
                                      <tr key={product.id}
                                          className={`group hover:bg-white/5 transition-colors ${selectedIds.has(product.id) ? 'bg-[var(--color-primary)]/5' : ''}`}
-                                         onMouseEnter={() => setHoveredProductId(product.id)}
-                                         onMouseLeave={() => setHoveredProductId(null)}
                                      >
                                          <td className="p-3 text-center align-middle">
                                              <input 
@@ -1188,18 +1278,40 @@ export default function AdminProductsPage() {
                                                  <span className="text-[var(--color-text-muted)] font-mono text-[11px]">SN: {product.serial_number}</span>
                                              </div>
                                          </td>
-                                         <td className="p-3 align-middle">
+                                         <td className="p-3 align-middle relative">
                                              <button
-                                               onClick={() => ['available','rented'].includes(product.status) ? handleQuickStatusToggle(product) : undefined}
-                                               className={`px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider border whitespace-nowrap transition-all ${
-                                                   product.status === 'available' ? 'text-green-400 bg-green-400/5 border-green-400/20 hover:bg-green-400/20 cursor-pointer' :
-                                                   product.status === 'rented' ? 'text-blue-400 bg-blue-400/5 border-blue-400/20 hover:bg-blue-400/20 cursor-pointer' :
-                                                   'text-orange-400 bg-orange-400/5 border-orange-400/20 cursor-default'
+                                               onClick={() => setActiveStatusToggleId(activeStatusToggleId === product.id ? null : product.id)}
+                                               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider border whitespace-nowrap transition-all ${
+                                                   product.status === 'available' ? 'text-green-400 bg-green-400/5 border-green-400/20 hover:bg-green-400/10 cursor-pointer' :
+                                                   product.status === 'rented' ? 'text-blue-400 bg-blue-400/5 border-blue-400/20 hover:bg-blue-400/10 cursor-pointer' :
+                                                   product.status === 'maintenance' ? 'text-orange-400 bg-orange-400/5 border-orange-400/20 hover:bg-orange-400/10 cursor-pointer' :
+                                                   product.status === 'retired' ? 'text-red-400 bg-red-400/5 border-red-400/20 hover:bg-red-400/10 cursor-pointer' :
+                                                   'text-gray-400 bg-gray-400/5 border-gray-400/20 cursor-pointer hover:bg-gray-400/10'
                                                }`}
-                                               title={['available','rented'].includes(product.status) ? 'Click to toggle status' : undefined}
+                                               title='Click to change status'
                                              >
                                                  {product.status}
+                                                 <ChevronDown size={10} className={`transition-transform duration-200 ${activeStatusToggleId === product.id ? 'rotate-180' : ''}`} />
                                              </button>
+                                             
+                                             {activeStatusToggleId === product.id && (
+                                                <div className="absolute top-full mt-1 left-3 z-[100] bg-[#1a1c23] border border-white/10 rounded-lg shadow-2xl overflow-hidden py-1 w-36">
+                                                    {['available', 'rented', 'maintenance', 'retired'].map((s) => (
+                                                        <button 
+                                                            key={s} 
+                                                            onClick={(e) => { e.stopPropagation(); handleQuickStatusToggle(product, s); }}
+                                                            className={`w-full text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 ${s === product.status ? 'bg-white/5 text-white' : 'text-[var(--color-text-muted)] hover:bg-white/5 hover:text-white'}`}
+                                                        >
+                                                            <div className={`w-1.5 h-1.5 rounded-full ${
+                                                                s === 'available' ? 'bg-green-400' : 
+                                                                s === 'rented' ? 'bg-blue-400' : 
+                                                                s === 'maintenance' ? 'bg-orange-400' : 'bg-red-400'
+                                                            }`}></div>
+                                                            {s}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                             )}
                                          </td>
                                          <td className="p-3 align-middle">
                                              {product.current_client_id ? (
@@ -1231,6 +1343,9 @@ export default function AdminProductsPage() {
                                                          <ArrowLeft size={15} />
                                                      </button>
                                                  )}
+                                                  <button onClick={() => setViewDetailsId(product.id)} className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-blue-400 transition-colors shrink-0" title="View Details">
+                                                      <Info size={15} />
+                                                  </button>
                                                   <button onClick={() => handleEdit(product)} className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-white transition-colors shrink-0" title="Edit Product">
                                                       <Edit size={15} />
                                                   </button>
@@ -1240,8 +1355,8 @@ export default function AdminProductsPage() {
                                                   <button onClick={() => handleShowHistory(product.id)} className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-blue-400 transition-colors shrink-0" title="Assignment History">
                                                       <History size={15} />
                                                   </button>
-                                                  <button onClick={() => setQrProductId(product.id)} className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-purple-400 transition-colors shrink-0" title="Show QR Code">
-                                                      <QrCode size={15} />
+                                                  <button onClick={() => setBarcodeProductId(product.id)} className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-purple-400 transition-colors shrink-0" title="Show Barcode">
+                                                      <Barcode size={15} />
                                                   </button>
                                                   <button onClick={() => setShowDeleteConfirm(product.id)} className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-red-400 transition-colors shrink-0" title="Delete Product">
                                                       <Trash2 size={15} />
@@ -1258,7 +1373,32 @@ export default function AdminProductsPage() {
             {/* MOBILE CARDS - shown only on mobile */}
             <div className="block md:hidden">
                 {filteredProducts.length === 0 ? (
-                    <p className="p-8 text-center text-[var(--color-text-muted)]">No products found matching filters.</p>
+                    <div className="flex flex-col items-center justify-center text-center p-8 border border-white/5 rounded-xl bg-white/5 mx-4 mb-4">
+                        <div className="w-16 h-16 rounded-full bg-[var(--color-primary)]/10 flex items-center justify-center mb-4 relative">
+                            <div className="absolute inset-0 rounded-full border border-[var(--color-primary)]/20 animate-ping opacity-20"></div>
+                            <Search size={24} className="text-[var(--color-primary)] relative z-10" />
+                        </div>
+                        <h3 className="text-lg font-bold text-white mb-2">No hardware found</h3>
+                        <p className="text-sm text-[var(--color-text-muted)] mb-6">
+                            Adjust filters or add a new product.
+                        </p>
+                        <div className="flex flex-col w-full gap-2">
+                            <button 
+                                onClick={() => {
+                                    setSearch(""); setDebouncedSearch("");
+                                    setCategoryFilter('all');
+                                    setClientFilter('all'); setModelFilter('all');
+                                    setSpecFilterKey(''); setSpecFilterValue('');
+                                }} 
+                                className="w-full py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors font-medium text-sm"
+                            >
+                                Clear Filters
+                            </button>
+                            <button onClick={() => setShowForm(true)} className="w-full py-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary)]/90 text-black rounded-lg transition-colors font-bold text-sm">
+                                Add Product
+                            </button>
+                        </div>
+                    </div>
                 ) : (
                     <div className="divide-y divide-white/5">
                         {currentItems.map((product) => (
@@ -1281,13 +1421,40 @@ export default function AdminProductsPage() {
                                                 <p className="font-semibold text-white text-sm leading-tight">{product.name}</p>
                                                 {product.model && <p className="text-[11px] text-[var(--color-text-muted)] mt-0.5">{product.model}</p>}
                                             </div>
-                                            <span className={`shrink-0 px-2 py-0.5 rounded-md text-[10px] uppercase font-bold tracking-wider border ${
-                                                product.status === 'available' ? 'text-green-400 bg-green-400/5 border-green-400/20' :
-                                                product.status === 'rented' ? 'text-blue-400 bg-blue-400/5 border-blue-400/20' :
-                                                'text-orange-400 bg-orange-400/5 border-orange-400/20'
-                                            }`}>
-                                                {product.status}
-                                            </span>
+                                            <div className="relative">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setActiveStatusToggleId(activeStatusToggleId === product.id ? null : product.id) }}
+                                                    className={`shrink-0 flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] uppercase font-bold tracking-wider border transition-all ${
+                                                        product.status === 'available' ? 'text-green-400 bg-green-400/5 border-green-400/20 hover:bg-green-400/10' :
+                                                        product.status === 'rented' ? 'text-blue-400 bg-blue-400/5 border-blue-400/20 hover:bg-blue-400/10' :
+                                                        product.status === 'maintenance' ? 'text-orange-400 bg-orange-400/5 border-orange-400/20 hover:bg-orange-400/10' :
+                                                        product.status === 'retired' ? 'text-red-400 bg-red-400/5 border-red-400/20 hover:bg-red-400/10' :
+                                                        'text-gray-400 bg-gray-400/5 border-gray-400/20 hover:bg-gray-400/10'
+                                                    }`}
+                                                >
+                                                    {product.status}
+                                                    <ChevronDown size={10} className={`transition-transform duration-200 ${activeStatusToggleId === product.id ? 'rotate-180' : ''}`} />
+                                                </button>
+
+                                                {activeStatusToggleId === product.id && (
+                                                    <div className="absolute top-full mt-1 right-0 z-[100] bg-[#1a1c23] border border-white/10 rounded-lg shadow-2xl overflow-hidden py-1 w-36">
+                                                        {['available', 'rented', 'maintenance', 'retired'].map((s) => (
+                                                            <button 
+                                                                key={s} 
+                                                                onClick={(e) => { e.stopPropagation(); handleQuickStatusToggle(product, s); }}
+                                                                className={`w-full text-left px-3 py-2 text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-2 ${s === product.status ? 'bg-white/5 text-white' : 'text-[var(--color-text-muted)] hover:bg-white/5 hover:text-white'}`}
+                                                            >
+                                                                <div className={`w-1.5 h-1.5 rounded-full ${
+                                                                    s === 'available' ? 'bg-green-400' : 
+                                                                    s === 'rented' ? 'bg-blue-400' : 
+                                                                    s === 'maintenance' ? 'bg-orange-400' : 'bg-red-400'
+                                                                }`}></div>
+                                                                {s}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
                                             <span className="text-[11px] text-[var(--color-text-muted)]">Cat: <span className="text-white">{product.category || 'N/A'}</span></span>
@@ -1354,23 +1521,23 @@ export default function AdminProductsPage() {
             )}
           </div>
         )}
-        {/* ─── QR Code Modal ─── */}
-        {qrProductId && (() => {
-          const p = products.find(x => x.id === qrProductId);
+        {/* ─── Barcode Modal ─── */}
+        {barcodeProductId && (() => {
+          const p = products.find(x => x.id === barcodeProductId);
           return p ? (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setQrProductId(null)}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setBarcodeProductId(null)}>
               <div className="bg-[var(--color-surface)] border border-white/10 rounded-2xl p-8 max-w-xs w-full shadow-2xl text-center" onClick={e => e.stopPropagation()}>
                 <h3 className="text-xl font-bold text-white mb-1">{p.name}</h3>
                 <p className="text-[var(--color-text-muted)] text-xs mb-5">{p.asset_id || p.id}</p>
                 <div className="bg-white rounded-xl p-4 mx-auto w-fit mb-5">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" className="w-40 h-40" shapeRendering="crispEdges">
-                    {/* Simple QR placeholder grid – real apps would use a QR library */}
-                    <rect width="10" height="10" fill="white" />
-                    <rect x="1" y="1" width="3" height="3" fill="black" />
-                    <rect x="6" y="1" width="3" height="3" fill="black" />
-                    <rect x="1" y="6" width="3" height="3" fill="black" />
-                    <rect x="4.5" y="4.5" width="1" height="1" fill="black" />
-                  </svg>
+                  <div className="w-40 h-16 bg-black flex flex-col justify-between p-1">
+                      {/* Placeholder Barcode visual */}
+                      <div className="w-full h-full flex items-center justify-between opacity-80">
+                         {Array.from({length: 20}).map((_, i) => (
+                             <div key={i} className={`h-full bg-white ${Math.random() > 0.5 ? 'w-1' : 'w-0.5'}`}></div>
+                         ))}
+                      </div>
+                  </div>
                 </div>
                 <div className="text-left text-xs font-mono text-[var(--color-text-muted)] bg-black/20 rounded-xl p-3 mb-4">
                   <p className="text-white font-bold mb-1">Asset Info</p>
@@ -1379,7 +1546,7 @@ export default function AdminProductsPage() {
                   <p>SN: {p.serial_number}</p>
                   <p>Status: {p.status}</p>
                 </div>
-                <button onClick={() => setQrProductId(null)} className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors text-sm">Close</button>
+                <button onClick={() => setBarcodeProductId(null)} className="w-full py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors text-sm">Close</button>
               </div>
             </div>
           ) : null;
@@ -1430,6 +1597,289 @@ export default function AdminProductsPage() {
             </div>
           </div>
         )}
+
+        {/* ─── CSV Import Drag & Drop Modal ─── */}
+        {showImportModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowImportModal(false)}>
+                <div className="bg-[var(--color-surface)] border border-white/10 rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between p-6 border-b border-white/5">
+                        <h2 className="text-xl font-bold text-white flex items-center gap-2"><Upload size={20} className="text-[var(--color-primary)]" /> Import Data</h2>
+                        <button onClick={() => setShowImportModal(false)} title="Close" className="text-[var(--color-text-muted)] hover:text-white transition-colors"><X size={20} /></button>
+                    </div>
+                    
+                    <div className="p-6 overflow-y-auto">
+                        <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[var(--color-primary)]/5 border border-[var(--color-primary)]/10 p-4 rounded-xl">
+                            <div>
+                                <h4 className="text-white font-semibold text-sm">Download Template</h4>
+                                <p className="text-[var(--color-text-muted)] text-xs mt-1">Use our template to ensure your CSV has the correct headers.</p>
+                            </div>
+                            <button onClick={downloadSampleCsv} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-lg transition-colors border border-white/10 whitespace-nowrap">
+                                <Download size={16} /> Get Template
+                            </button>
+                        </div>
+
+                        <div 
+                            onDragEnter={handleDrag}
+                            onDragLeave={handleDrag}
+                            onDragOver={handleDrag}
+                            onDrop={handleDrop}
+                            className={`border-2 border-dashed rounded-xl p-12 flex flex-col items-center justify-center transition-all bg-black/20 ${
+                                dragActive ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5" : "border-white/10 hover:border-white/20"
+                            }`}
+                        >
+                            <input ref={csvInputRef} type="file" accept=".csv" className="hidden" title="Import CSV" onChange={handleCsvImport} />
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-colors ${dragActive ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)]' : 'bg-white/5 text-[var(--color-text-muted)]'}`}>
+                                <FileSpreadsheet size={32} />
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-2">Drag & drop your CSV file here</h3>
+                            <p className="text-[var(--color-text-muted)] text-sm mb-6 max-w-sm text-center">or browse from your computer. Make sure you are using the correct column layouts.</p>
+                            
+                            <button disabled={isImporting} onClick={() => csvInputRef.current?.click()} className="btn-primary px-6 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-50 font-medium">
+                                {isImporting ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
+                                {isImporting ? 'Processing File...' : 'Browse Files'}
+                            </button>
+                        </div>
+                        
+                        <div className="mt-6 bg-white/5 rounded-xl p-4 text-xs text-[var(--color-text-muted)]">
+                            <ul className="list-disc pl-4 space-y-1">
+                                <li><strong>Required columns:</strong> <code className="bg-black/40 px-1 py-0.5 rounded ml-1">Name</code></li>
+                                <li><strong>Supported status values:</strong> available, rented, maintenance, retired</li>
+                                <li>Dynamic specification columns are currently <strong>not</strong> supported via bulk import.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* ─── Filter Side Drawer ─── */}
+        {showFilterDrawer && (
+            <>
+                <div className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm transition-opacity" onClick={() => setShowFilterDrawer(false)} />
+                <div className="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-[var(--color-surface)] border-l border-white/10 z-50 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+                    <div className="flex items-center justify-between p-6 border-b border-white/5">
+                        <div className="flex items-center gap-2 text-white font-bold text-lg">
+                            <Filter size={20} className="text-[var(--color-primary)]" />
+                            Advanced Filters
+                        </div>
+                        <button onClick={() => setShowFilterDrawer(false)} title="Close Filters" className="text-[var(--color-text-muted)] hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-2 rounded-full">
+                            <X size={18} />
+                        </button>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                        <div>
+                            <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3 block">Filter by Status</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {/* Currently using a combined client filter to handle status conceptually - extending would require more state. Using existing states for UI presentation only */}
+                                <div className="p-3 border border-[var(--color-primary)]/50 bg-[var(--color-primary)]/10 rounded-xl text-white text-sm font-medium flex items-center justify-between cursor-pointer">
+                                    All Statuses <CheckSquare size={16} className="text-[var(--color-primary)]" />
+                                </div>
+                                <div className="p-3 border border-white/10 bg-white/5 rounded-xl text-[var(--color-text-muted)] hover:text-white hover:border-white/20 transition-colors text-sm font-medium cursor-pointer">
+                                    Available Only
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3 block">Category</label>
+                            <select 
+                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[var(--color-primary)]/50"
+                                value={categoryFilter}
+                                onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}
+                                aria-label="Filter by Category"
+                            >
+                                <option value="all">Any Category</option>
+                                {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3 block">Client / Assignment</label>
+                            <select 
+                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[var(--color-primary)]/50"
+                                value={clientFilter}
+                                onChange={(e) => { setClientFilter(e.target.value); setCurrentPage(1); }}
+                                aria-label="Filter by Client"
+                            >
+                                <option value="all">Any Client</option>
+                                {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3 block">Hardware Model</label>
+                            <select 
+                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[var(--color-primary)]/50"
+                                value={modelFilter}
+                                onChange={(e) => { setModelFilter(e.target.value); setCurrentPage(1); }}
+                                aria-label="Filter by Model"
+                            >
+                                <option value="all">Any Model</option>
+                                {uniqueModels.map(m => <option key={m} value={m}>{m}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="pt-4 border-t border-white/5">
+                            <label className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3 block flex items-center gap-2">
+                                <Cpu size={14} /> Specification Search
+                            </label>
+                            <div className="space-y-3">
+                                <div>
+                                    <span className="text-xs text-[var(--color-text-muted)] mb-1 block">Spec Property (ex. RAM)</span>
+                                    <input 
+                                        type="text" 
+                                        title="Specification Key"
+                                        placeholder="Spec Key"
+                                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]/50"
+                                        value={specFilterKey}
+                                        onChange={(e) => { setSpecFilterKey(e.target.value); if(!e.target.value) setSpecFilterValue(""); setCurrentPage(1); }}
+                                    />
+                                </div>
+                                <div>
+                                    <span className="text-xs text-[var(--color-text-muted)] mb-1 block">Property Value (ex. 16GB)</span>
+                                    <input 
+                                        type="text" 
+                                        disabled={!specFilterKey}
+                                        title="Specification Value"
+                                        placeholder="Spec Value"
+                                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-[var(--color-primary)]/50 disabled:opacity-50"
+                                        value={specFilterValue}
+                                        onChange={(e) => { setSpecFilterValue(e.target.value); setCurrentPage(1); }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="p-6 border-t border-white/5 bg-white/5">
+                        <button 
+                            className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors"
+                            onClick={() => {
+                                setClientFilter('all'); setCategoryFilter('all'); setModelFilter('all'); setSpecFilterKey(''); setSpecFilterValue('');
+                            }}
+                        >
+                            Reset Defaults
+                        </button>
+                    </div>
+                </div>
+            </>
+        )}
+
+        {/* ─── View Details Slide Over ─── */}
+        {viewDetailsId && (() => {
+            const p = products.find(x => x.id === viewDetailsId);
+            return p ? (
+            <>
+                <div className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm transition-opacity" onClick={() => setViewDetailsId(null)} />
+                <div className="fixed top-0 right-0 h-full w-full sm:w-[500px] md:w-[600px] bg-[var(--color-surface)] border-l border-white/10 z-50 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-6 border-b border-white/5 bg-black/20 shrink-0">
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <h2 className="text-2xl font-bold text-white line-clamp-1">{p.name}</h2>
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] uppercase font-bold tracking-wider border whitespace-nowrap ${
+                                    p.status === 'available' ? 'text-green-400 bg-green-400/5 border-green-400/20' :
+                                    p.status === 'rented' ? 'text-blue-400 bg-blue-400/5 border-blue-400/20' :
+                                    p.status === 'maintenance' ? 'text-orange-400 bg-orange-400/5 border-orange-400/20' :
+                                    'text-[var(--color-text-muted)] bg-white/5 border-white/20'
+                                }`}>
+                                    {p.status}
+                                </span>
+                            </div>
+                            <p className="text-sm text-[var(--color-text-muted)] font-mono">{p.asset_id || p.id} • SN: {p.serial_number}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => { setViewDetailsId(null); handleEdit(p); }} className="text-white bg-[var(--color-primary)]/20 hover:bg-[var(--color-primary)] hover:text-black p-2 rounded-lg transition-colors" title="Edit Product">
+                                <Edit size={18} />
+                            </button>
+                            <button onClick={() => setViewDetailsId(null)} title="Close" className="text-[var(--color-text-muted)] hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-2 rounded-lg">
+                                <X size={18} />
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* Content Scroll Area */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                        {/* Status/Assignment Banner */}
+                        {p.status === 'rented' && p.current_client_id && (
+                            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-5 flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
+                                    <Package size={20} className="text-blue-400" />
+                                </div>
+                                <div>
+                                    <h4 className="text-blue-400 font-bold mb-1">Currently Rented</h4>
+                                    <p className="text-sm text-white mb-2">Assigned to: <span className="font-semibold">{p.profiles?.full_name || 'Unknown Client'}</span></p>
+                                    <p className="text-xs text-[var(--color-text-muted)] flex items-center gap-1.5"><History size={12} /> Since {p.assigned_date ? new Date(p.assigned_date).toLocaleDateString() : 'Unknown date'}</p>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {p.status === 'maintenance' && (
+                            <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-5 flex items-start gap-4">
+                                <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center shrink-0">
+                                    <Wrench size={20} className="text-orange-400" />
+                                </div>
+                                <div>
+                                    <h4 className="text-orange-400 font-bold mb-1">Under Maintenance</h4>
+                                    {p.description && p.description.includes('[MAINTENANCE]') && (
+                                        <p className="text-sm text-white">{p.description.replace('[MAINTENANCE]', '').trim()}</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Core Details Grid */}
+                        <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+                            <div>
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1">Category</h5>
+                                <p className="text-sm text-white font-medium">{p.category || 'Uncategorized'}</p>
+                            </div>
+                            <div>
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1">Brand</h5>
+                                <p className="text-sm text-white font-medium">{p.brand || '—'}</p>
+                            </div>
+                            <div>
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1">Model</h5>
+                                <p className="text-sm text-white font-medium">{p.model || '—'}</p>
+                            </div>
+                            <div>
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-1">Registered On</h5>
+                                <p className="text-sm text-white font-medium">{new Date(p.created_at).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+
+                        {p.description && !p.description.includes('[MAINTENANCE]') && (
+                            <div>
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Description / Notes</h5>
+                                <div className="bg-white/5 border border-white/5 rounded-xl p-4 text-sm text-[var(--color-text-muted)] whitespace-pre-wrap">
+                                    {p.description}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Specifications Table */}
+                        {p.specifications && Object.keys(p.specifications).length > 0 && (
+                            <div>
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] mb-3">Hardware Specifications</h5>
+                                <div className="bg-white/5 border border-white/5 rounded-xl overflow-hidden divide-y divide-white/5">
+                                    {Object.entries(p.specifications).map(([key, value]) => (
+                                        <div key={key} className="flex flex-col sm:flex-row sm:items-center py-3 px-4 px-4 hover:bg-white/5 transition-colors">
+                                            <span className="text-xs text-[var(--color-text-muted)] w-1/3 shrink-0">{key}</span>
+                                            <span className="text-sm text-white font-medium mt-1 sm:mt-0">{value as string}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {/* Quick Actions Footer Space */}
+                        <div className="h-6"></div>
+                    </div>
+                </div>
+            </>
+            ) : null;
+        })()}
       </div>
   );
 }

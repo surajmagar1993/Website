@@ -9,6 +9,7 @@ import Image from "next/image";
 import ClientModal from "@/components/dashboard/ClientModal";
 import { useProfile } from "@/hooks/useProfile";
 import { fromShadowEmail } from "@/lib/constants";
+import { TableSkeleton } from "@/components/ui/Skeletons";
 
 interface Profile {
   id: string;
@@ -254,7 +255,7 @@ export default function UsersManagementPage() {
         {/* List */}
         <div className="glass rounded-2xl overflow-hidden border border-white/5">
             {loading ? (
-                <div className="p-12 text-center text-[var(--color-text-muted)]">Loading profiles...</div>
+                <TableSkeleton rows={5} columns={4} />
             ) : profiles.length === 0 ? (
                 <div className="p-12 text-center">
                     <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-[var(--color-text-muted)]">

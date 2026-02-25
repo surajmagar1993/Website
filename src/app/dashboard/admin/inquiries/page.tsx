@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { ArrowLeft, Mail, Trash2, CheckCircle, Clock, MessageSquare } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/Skeletons";
 
 interface Inquiry {
   id: string;
@@ -116,7 +117,14 @@ export default function InquiriesPage() {
             {/* List */}
             <div className={`lg:col-span-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar ${selectedInquiry ? 'hidden lg:block' : 'block'}`}>
                 {loading ? (
-                    <div className="text-[var(--color-text-muted)] text-center py-8">Loading...</div>
+                    <div className="space-y-4">
+                        {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="glass p-5 rounded-xl border border-white/5 space-y-3">
+                                <Skeleton className="h-5 w-1/3" />
+                                <Skeleton className="h-4 w-1/2" />
+                            </div>
+                        ))}
+                    </div>
                 ) : inquiries.length === 0 ? (
                     <div className="glass p-8 rounded-2xl text-center border border-white/5">
                         <p className="text-[var(--color-text-muted)]">No inquiries found.</p>

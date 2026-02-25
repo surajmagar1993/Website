@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { MessageSquare, Trash2, Loader2, RefreshCw } from "lucide-react";
 import { sendTicketAssignmentEmail } from "@/actions/tickets";
+import { Skeleton } from "@/components/ui/Skeletons";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export default function TicketList({ userId, role, statusFilter }: { userId: string, role: string, statusFilter?: string }) {
@@ -177,7 +178,22 @@ export default function TicketList({ userId, role, statusFilter }: { userId: str
       }
   };
 
-  if (loading) return <div className="text-[var(--color-text-muted)] text-sm">Loading tickets...</div>;
+  if (loading) return (
+      <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                      <Skeleton className="w-10 h-10 rounded-lg" />
+                      <div className="space-y-2">
+                          <Skeleton className="h-5 w-48" />
+                          <Skeleton className="h-4 w-32" />
+                      </div>
+                  </div>
+                  <Skeleton className="h-8 w-24 rounded-full" />
+              </div>
+          ))}
+      </div>
+  );
 
   if (tickets.length === 0) {
     return (
