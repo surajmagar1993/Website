@@ -44,7 +44,10 @@ export interface SiteSettings {
   trust_badge_3_value?: string;
   trust_badge_3_label?: string;
   /* Img Assets */
-  team_photo?: string;
+  logo_url?: string;
+  favicon_url?: string;
+  background_animation?: string;
+  active_theme?: string;
   [key: string]: string | undefined;
 }
 

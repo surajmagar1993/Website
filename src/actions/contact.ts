@@ -6,13 +6,23 @@
 
 import { getSiteSettings } from "@/lib/settings";
 import { Resend } from "resend";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
+import { z } from "zod";
 
 export type ContactState = {
   success?: boolean;
   error?: string;
   message?: string;
 };
+
+// Zod Schema for robust Input Validation
+const contactSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").max(100),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone number is too short").max(20, "Phone number is too long"),
+  service: z.string().min(2, "Service must be selected"),
+  message: z.string().min(10, "Message must be at least 10 characters").max(1000),
+});
 
 /** Validates captcha, stores inquiry in DB, and optionally sends notification email. */
 export async function submitContactForm(prevState: ContactState, formData: FormData): Promise<ContactState> {
@@ -47,15 +57,27 @@ export async function submitContactForm(prevState: ContactState, formData: FormD
 
   // Verification successful
   
-  const name = formData.get("name") as string;
-  const email = formData.get("email") as string;
-  const phone = formData.get("phone") as string;
-  const service = formData.get("service") as string;
-  const message = formData.get("message") as string;
+  // 1. Zod Input Validation
+  const validatedFields = contactSchema.safeParse({
+    name: formData.get("name"),
+    email: formData.get("email"),
+    phone: formData.get("phone"),
+    service: formData.get("service"),
+    message: formData.get("message"),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      error: "Invalid form data. Please check your inputs.",
+    };
+  }
+
+  const { name, email, phone, service, message } = validatedFields.data;
 
 
-
-  // 1. Save to Supabase (Inquiries Table)
+  // 2. Save to Supabase (Inquiries Table) using Secure Server Client
+  const supabase = await createClient();
   const { error: dbError } = await supabase
     .from('inquiries')
     .insert({
@@ -71,7 +93,7 @@ export async function submitContactForm(prevState: ContactState, formData: FormD
     console.error("Supabase Error:", dbError);
   }
 
-  // 2. Send Email via Resend
+  // 3. Send Email via Resend
   const resendApiKey = process.env.RESEND_API_KEY;
   if (resendApiKey) {
     try {

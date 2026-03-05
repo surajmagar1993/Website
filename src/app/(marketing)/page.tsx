@@ -156,7 +156,10 @@ export default async function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 relative z-10 pt-28 sm:pt-32 pb-16 sm:pb-20">
           <div className="max-w-4xl text-center mx-auto">
             <h1 className="font-[family-name:var(--font-heading)] text-3xl sm:text-4xl md:text-5xl lg:text-5xl xl:text-6xl font-[900] text-white leading-tight mb-6 sm:mb-8 tracking-tighter flex flex-col items-center justify-center w-full whitespace-nowrap">
-              <FadeIn delay={0.2} className="inline-block px-2 text-center w-full">
+              <FadeIn
+                delay={0.2}
+                className="inline-block px-2 text-center w-full"
+              >
                 {settings.home_hero_title || "Transform Your Business With"}
               </FadeIn>
               <HyperText

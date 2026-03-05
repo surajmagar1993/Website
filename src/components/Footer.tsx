@@ -16,10 +16,8 @@ const quickLinks = [
 const serviceLinks = [
   { href: "/services/web-development", label: "Web Development" },
   { href: "/services/app-development", label: "App Development" },
-  { href: "/services/data-analytics", label: "Data Analytics" },
-  { href: "/services/market-research", label: "Market Research" },
-  { href: "/services/lead-generation", label: "Lead Generation" },
   { href: "/services/it-products", label: "IT Products & Rentals" },
+  { href: "/services", label: "View All Services →" },
 ];
 
 import { SiteSettings } from "@/lib/settings";

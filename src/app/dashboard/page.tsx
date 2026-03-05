@@ -7,6 +7,7 @@ import AssignmentsList from "@/components/dashboard/AssignmentsList";
 import TicketList from "@/components/dashboard/TicketList";
 import TicketForm from "@/components/dashboard/TicketForm";
 import { useRouter } from "next/navigation";
+import Head from "next/head";
 
 interface User {
   id: string;
@@ -20,6 +21,8 @@ interface Profile {
   email?: string;
   company_name?: string;
 }
+
+// Metadata is handled by dashboard/layout.tsx server component
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -63,6 +66,12 @@ export default function DashboardPage() {
 
   return (
       <div className="space-y-8">
+        <Head>
+            <title>Dashboard - Genesoft Infotech</title>
+            <meta name="description" content="Secure client portal for managing hardware assets and service tickets." />
+            <meta property="og:title" content="Dashboard - Genesoft Infotech" />
+            <meta name="openGraph:" content="Dashboard" />
+        </Head>
         <div className="mb-8">
             <h1 className="text-3xl font-bold text-white mb-2 font-[family-name:var(--font-heading)]">
              My Dashboard

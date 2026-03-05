@@ -787,10 +787,10 @@ export default function AdminProductsPage() {
           <Card className="glass border-white/10 bg-black/20 text-white">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Categories</CardTitle>
-              <Tag size={18} className="text-purple-400" />
+              <Tag size={18} className="text-teal-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-400">{categories.length}</div>
+              <div className="text-2xl font-bold text-teal-400">{categories.length}</div>
               <p className="text-xs text-gray-500 mt-1">Asset types</p>
             </CardContent>
           </Card>
@@ -807,7 +807,7 @@ export default function AdminProductsPage() {
                    <button 
                        onClick={printBulkBarcodes}
                        disabled={isPrintingBarcode || isBulkActing}
-                       className="bg-purple-500/20 text-purple-400 hover:bg-purple-500/40 px-4 py-2 rounded-lg font-bold text-sm transition-colors border border-purple-500/20 flex items-center gap-2 disabled:opacity-50 whitespace-nowrap"
+                       className="bg-teal-500/20 text-teal-400 hover:bg-teal-500/40 px-4 py-2 rounded-lg font-bold text-sm transition-colors border border-teal-500/20 flex items-center gap-2 disabled:opacity-50 whitespace-nowrap"
                    >
                        {isPrintingBarcode ? <Loader2 size={16} className="animate-spin" /> : <Printer size={16} />}
                        Print Barcodes
@@ -1376,7 +1376,7 @@ export default function AdminProductsPage() {
                                                   <button onClick={() => handleShowHistory(product.id)} className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-blue-400 transition-colors shrink-0" title="Assignment History">
                                                       <History size={15} />
                                                   </button>
-                                                  <button onClick={() => setBarcodeProductId(product.id)} className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-purple-400 transition-colors shrink-0" title="Show Barcode">
+                                                  <button onClick={() => setBarcodeProductId(product.id)} className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-teal-400 transition-colors shrink-0" title="Show Barcode">
                                                       <Barcode size={15} />
                                                   </button>
                                                   <button onClick={() => setShowDeleteConfirm(product.id)} className="p-1.5 hover:bg-white/10 rounded-lg text-[var(--color-text-muted)] hover:text-red-400 transition-colors shrink-0" title="Delete Product">

@@ -157,6 +157,26 @@ export default function AdminSettingsPage() {
                         </p>
                     </div>
 
+                    <div className="mb-8">
+                         <SelectGroup 
+                            label="Active Website Theme" 
+                            value={settings.active_theme || 'auto'} 
+                            onChange={(v) => handleChange('active_theme', v)} 
+                            icon={<Globe size={18} />}
+                            options={[
+                                { value: 'auto', label: 'Auto-Sync with Calendar (Recommended)' },
+                                { value: 'default', label: 'Default (Dark Corporate)' },
+                                { value: 'diwali', label: 'Diwali (Festival of Lights)' },
+                                { value: 'holi', label: 'Holi (Festival of Colors)' },
+                                { value: 'independence', label: 'Republic / Independence Day' },
+                                { value: 'navratri', label: 'Navratri (Dussehra)' },
+                                { value: 'christmas', label: 'Christmas' },
+                                { value: 'newyear', label: "New Year's Eve" },
+                                { value: 'valentine', label: "Valentine's Day" },
+                            ]}
+                        />
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <ImageUpload 
                             label="Company Logo"
@@ -203,6 +223,21 @@ export default function AdminSettingsPage() {
             {activeTab === 'landing' && (
                 <div className="space-y-6 max-w-3xl">
                     <h3 className="text-xl font-bold text-white mb-4 border-b border-white/10 pb-2">Hero Section</h3>
+                    
+                    <div className="mb-6">
+                         <SelectGroup 
+                            label="Background Animation" 
+                            value={settings.background_animation || 'globe'} 
+                            onChange={(v) => handleChange('background_animation', v)} 
+                            icon={<Globe size={18} />}
+                            options={[
+                                { value: 'globe', label: 'Interactive Globe (Default)' },
+                                { value: 'grid', label: 'Geometric Grid' },
+                                { value: 'none', label: 'No Animation (Solid Color)' },
+                            ]}
+                        />
+                    </div>
+
                     <div className="mb-6">
                         <ImageUpload 
                             label="Hero Background Image"
@@ -576,6 +611,35 @@ function InputGroup({ label, value, onChange, icon, textarea }: { label: string,
                         className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:ring-1 focus:ring-[var(--color-primary)] outline-none transition-all"
                     />
                 )}
+            </div>
+        </div>
+    )
+}
+
+function SelectGroup({ label, value, onChange, icon, options }: { label: string, value: string, onChange: (v: string) => void, icon: React.ReactNode, options: {value: string, label: string}[] }) {
+    return (
+        <div className="space-y-2">
+            <label className="text-xs uppercase tracking-wider text-[var(--color-text-muted)] font-bold ml-1">{label}</label>
+            <div className="relative group">
+                <div className="absolute left-4 top-3 text-[var(--color-text-muted)] group-focus-within:text-[var(--color-primary)] transition-colors pointer-events-none">
+                    {icon}
+                </div>
+                <select 
+                    title={label}
+                    aria-label={label}
+                    value={value || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full bg-black/20 border border-white/10 rounded-xl py-3 pl-12 pr-10 text-white focus:ring-1 focus:ring-[var(--color-primary)] outline-none transition-all appearance-none"
+                >
+                    {options.map(opt => (
+                        <option key={opt.value} value={opt.value} className="bg-[#111] text-white">
+                            {opt.label}
+                        </option>
+                    ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-muted)]">
+                    ▼
+                </div>
             </div>
         </div>
     )

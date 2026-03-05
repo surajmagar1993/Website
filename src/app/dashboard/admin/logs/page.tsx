@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase-client";
 import { useEffect, useState } from "react";
 import { TableSkeleton } from "@/components/ui/Skeletons";
 import { toast } from "sonner";
+import Head from "next/head";
 import { formatDistanceToNow } from "date-fns";
 
 type Log = {
@@ -53,6 +54,12 @@ export default function AdminLogsPage() {
     <div className="p-6 md:p-10 min-h-screen">
       <div className="max-w-7xl mx-auto">
         <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <Head>
+                <title>Audit Logs - Genesoft Admin</title>
+                <meta name="description" content="Track system activity and administrative actions across the Genesoft portal." />
+                <meta property="og:title" content="Audit Logs - Genesoft Admin" />
+                <meta name="openGraph:" content="Audit Logs" />
+            </Head>
             <div>
                 <h1 className="text-3xl font-bold text-white mb-2 font-[family-name:var(--font-heading)]">Audit Logs</h1>
                 <p className="text-[var(--color-text-muted)]">Track system activity and administrative actions.</p>

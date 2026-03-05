@@ -233,10 +233,10 @@ export default function UsersManagementPage() {
           <Card className="glass border-white/10 bg-black/20 text-white">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">Companies</CardTitle>
-              <Building size={18} className="text-purple-400" />
+              <Building size={18} className="text-teal-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-400">
+              <div className="text-2xl font-bold text-teal-400">
                 {profiles.filter(p => p.company_name).length}
               </div>
               <p className="text-xs text-gray-500 mt-1">With company profiles</p>

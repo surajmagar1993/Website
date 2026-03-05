@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-
 @theme {
   /* Typography — valid Tailwind theme tokens */
   --font-heading: "Lexend", system-ui, sans-serif;
@@ -9,7 +8,7 @@
 }
 
 /* ═══ Design System Tokens (outside @theme to avoid Tailwind overrides) ═══ */
-:root {
+:root, .theme-default {
   /* Core Dark */
   --color-bg: #050510;
   --color-bg-secondary: #0a0a1a;
@@ -33,32 +32,114 @@
   --color-text-muted: #64748b;
 
   /* Gradients */
-  --gradient-primary: linear-gradient(
-    135deg,
-    #f97316,
-    #ec4899
-  ); /* Orange to Pink */
-  --gradient-accent: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  --gradient-hero:
-    radial-gradient(
-      ellipse at 20% 50%,
-      rgba(249, 115, 22, 0.15) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      ellipse at 80% 20%,
-      rgba(59, 130, 246, 0.1) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      ellipse at 50% 100%,
-      rgba(236, 72, 153, 0.08) 0%,
-      transparent 50%
-    );
+  --gradient-primary: linear-gradient(135deg, #f97316, #ec4899); /* Orange to Pink */
+  --gradient-accent: linear-gradient(135deg, #3b82f6, #14b8a6); /* Blue to Teal */
+  --gradient-hero: radial-gradient(ellipse at 20% 50%, rgba(249, 115, 22, 0.15) 0%, transparent 50%),
+                   radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                   radial-gradient(ellipse at 50% 100%, rgba(236, 72, 153, 0.08) 0%, transparent 50%);
 
   /* Glass blur */
   --blur-glass: 20px;
   --blur-heavy: 40px;
+}
+
+/* 🪔 Diwali Theme (Festival of Lights) */
+.theme-diwali {
+  --color-bg: #0A0400;
+  --color-bg-secondary: #1A0902;
+  --color-primary: #FF6B00;
+  --color-primary-glow: rgba(255, 107, 0, 0.6);
+  --color-accent: #FFC000;
+  --color-accent-glow: rgba(255, 192, 0, 0.5);
+  --gradient-primary: linear-gradient(135deg, #FF6B00, #E4000F, #900000);
+  --gradient-accent: linear-gradient(135deg, #FFC000, #FF6B00);
+  --gradient-hero: radial-gradient(ellipse at 20% 50%, rgba(255, 107, 0, 0.25) 0%, transparent 60%),
+                   radial-gradient(ellipse at 80% 20%, rgba(255, 192, 0, 0.2) 0%, transparent 60%);
+}
+
+/* 🎨 Holi Theme (Festival of Colors) */
+.theme-holi {
+  --color-bg: #090212;
+  --color-bg-secondary: #140529;
+  --color-primary: #E81CFF;
+  --color-primary-glow: rgba(232, 28, 255, 0.6);
+  --color-accent: #00F0FF;
+  --color-accent-glow: rgba(0, 240, 255, 0.5);
+  --gradient-primary: linear-gradient(135deg, #E81CFF, #FF3D00, #FFEA00);
+  --gradient-accent: linear-gradient(135deg, #00F0FF, #39FF14);
+  --gradient-hero: radial-gradient(ellipse at 20% 40%, rgba(232, 28, 255, 0.25) 0%, transparent 60%),
+                   radial-gradient(ellipse at 80% 30%, rgba(0, 240, 255, 0.25) 0%, transparent 60%),
+                   radial-gradient(ellipse at 50% 90%, rgba(255, 61, 0, 0.15) 0%, transparent 60%);
+}
+
+/* 🇮🇳 Republic Day Theme */
+.theme-independence {
+  --color-bg: #020610;
+  --color-bg-secondary: #050B1C;
+  --color-primary: #FF7F11;
+  --color-primary-glow: rgba(255, 127, 17, 0.5);
+  --color-accent: #0A8E2E;
+  --color-accent-glow: rgba(10, 142, 46, 0.5);
+  --gradient-primary: linear-gradient(135deg, #FF7F11, #F4F4F4 50%, #0A8E2E);
+  --gradient-accent: linear-gradient(135deg, #0A8E2E, #053B50);
+  --gradient-hero: radial-gradient(ellipse at 10% 40%, rgba(255, 127, 17, 0.2) 0%, transparent 60%),
+                   radial-gradient(ellipse at 90% 40%, rgba(10, 142, 46, 0.2) 0%, transparent 60%),
+                   radial-gradient(ellipse at 50% 100%, rgba(0, 0, 128, 0.15) 0%, transparent 60%);
+}
+
+/* 💃 Navratri Theme (Dussehra/Garba) */
+.theme-navratri {
+  --color-bg: #0D0005;
+  --color-bg-secondary: #24000C;
+  --color-primary: #D10034;
+  --color-primary-glow: rgba(209, 0, 52, 0.6);
+  --color-accent: #FBB41A;
+  --color-accent-glow: rgba(251, 180, 26, 0.5);
+  --gradient-primary: linear-gradient(135deg, #D10034, #730018);
+  --gradient-accent: linear-gradient(135deg, #FBB41A, #E87A00);
+  --gradient-hero: radial-gradient(ellipse at 20% 50%, rgba(209, 0, 52, 0.25) 0%, transparent 60%),
+                   radial-gradient(ellipse at 80% 20%, rgba(251, 180, 26, 0.2) 0%, transparent 60%);
+}
+
+/* 🎄 Christmas Theme */
+.theme-christmas {
+  --color-bg: #010A05;
+  --color-bg-secondary: #031C0C;
+  --color-primary: #E61212;
+  --color-primary-glow: rgba(230, 18, 18, 0.6);
+  --color-accent: #FFD700;
+  --color-accent-glow: rgba(255, 215, 0, 0.5);
+  --gradient-primary: linear-gradient(135deg, #E61212, #5C0000);
+  --gradient-accent: linear-gradient(135deg, #FFD700, #FFFFFF);
+  --gradient-hero: radial-gradient(ellipse at 20% 30%, rgba(230, 18, 18, 0.25) 0%, transparent 60%),
+                   radial-gradient(ellipse at 80% 40%, rgba(255, 215, 0, 0.15) 0%, transparent 60%);
+}
+
+/* 🎆 New Year Theme */
+.theme-newyear {
+  --color-bg: #000002;
+  --color-bg-secondary: #02020A;
+  --color-primary: #FFD700;
+  --color-primary-glow: rgba(255, 215, 0, 0.6);
+  --color-accent: #F8FAFC;
+  --color-accent-glow: rgba(248, 250, 252, 0.4);
+  --gradient-primary: linear-gradient(135deg, #FFD700, #B8860B, #FF8C00);
+  --gradient-accent: linear-gradient(135deg, #F8FAFC, #64748B);
+  --gradient-hero: radial-gradient(ellipse at 50% 40%, rgba(255, 215, 0, 0.2) 0%, transparent 65%);
+}
+
+/* 💖 Valentine's Day Theme */
+.theme-valentine {
+  --color-bg: #0C0105;
+  --color-bg-secondary: #21020A;
+  --color-primary: #FA004F;
+  --color-primary-glow: rgba(250, 0, 79, 0.6);
+  --color-accent: #FFA6C9;
+  --color-accent-glow: rgba(255, 166, 201, 0.5);
+  --gradient-primary: linear-gradient(135deg, #FA004F, #800020);
+  --gradient-accent: linear-gradient(135deg, #FFA6C9, #FF1493);
+  --gradient-hero: radial-gradient(ellipse at 20% 50%, rgba(250, 0, 79, 0.25) 0%, transparent 60%),
+                   radial-gradient(ellipse at 80% 20%, rgba(255, 166, 201, 0.2) 0%, transparent 60%);
 }
 
 /* ═══ Base ═══ */

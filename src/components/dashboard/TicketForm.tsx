@@ -57,8 +57,9 @@ export default function TicketForm({ onSuccess }: { onSuccess: () => void }) {
         )}
 
         <div>
-          <label className="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Subject</label>
+          <label htmlFor="ticket-subject" className="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Subject</label>
           <input
+            id="ticket-subject"
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
@@ -69,8 +70,9 @@ export default function TicketForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
 
         <div>
-          <label className="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Description</label>
+          <label htmlFor="ticket-description" className="block text-xs uppercase tracking-wider text-[var(--color-text-muted)] mb-2">Description</label>
           <textarea
+            id="ticket-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
