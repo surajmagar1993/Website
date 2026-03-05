@@ -27,7 +27,7 @@ export function DiwaliAnimation() {
         <motion.div
           key={i}
           className="absolute bg-[#FF8A00] rounded-full blur-[2px] opacity-80"
-          style={{
+          initial={{
             left: p.left,
             bottom: -50,
             width: p.size,
@@ -79,23 +79,22 @@ export function HoliAnimation() {
         <motion.svg
           key={i}
           className="absolute origin-center mix-blend-screen"
-          style={{ left: s.left, top: s.top, fill: s.color }}
           viewBox="0 0 100 100"
-          initial={{ scale: 0, opacity: 0, rotate: s.rotate }}
+          initial={{ 
+            scale: 0, 
+            opacity: 0, 
+            rotate: s.rotate,
+            left: s.left,
+            top: s.top,
+            fill: s.color,
+            width: s.targetSize,
+            height: s.targetSize
+          }}
           animate={{
             scale: [0, 1.5, 1.2], // Explosive "splat"
             opacity: [0, 0.8, 0],
             y: [0, 50] // Slow drip downward
           }}
-          transition={{
-            duration: s.duration,
-            delay: s.delay,
-            repeat: Infinity,
-            times: [0, 0.1, 1], // Wait scaling to pop fast, then slow fade
-            ease: "easeOut"
-          }}
-          width={s.targetSize}
-          height={s.targetSize}
         >
           {/* A more organic, randomized splash path instead of a circle */}
           <path d="M49.5 2C35 5 15 15 5 35C-5 55 5 80 20 90C40 105 75 95 90 75C105 55 95 25 80 15C65 5 55 0 49.5 2Z" filter="blur(8px)" />
@@ -131,7 +130,7 @@ export function IndependenceAnimation() {
         <motion.div
           key={i}
           className="absolute w-2 h-4 opacity-80"
-          style={{ left: c.left, top: -20, backgroundColor: c.color }}
+          initial={{ left: c.left, top: -20, backgroundColor: c.color }}
           animate={{
             y: [0, 1000],
             rotateX: [0, c.rotateX],
@@ -201,7 +200,7 @@ export function ChristmasAnimation() {
         <motion.div
           key={i}
           className="absolute bg-white rounded-full opacity-80"
-          style={{
+          initial={{
             left: s.left,
             top: -10,
             width: s.size,
@@ -244,13 +243,20 @@ export function NewYearAnimation() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
       {fireworks.map((fw, i) => (
-        <div key={i} className="absolute" style={{ left: fw.left, top: fw.top }}>
+        <motion.div key={i} className="absolute" initial={{ left: fw.left, top: fw.top }}>
           {fw.particles.map((p: any, j: number) => (
              <motion.div
                key={j}
                className="absolute bg-[#FFD700] rounded-full"
-               style={{ width: p.size, height: p.size, boxShadow: '0 0 8px 2px rgba(255, 215, 0, 0.8)' }}
-               initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
+               initial={{ 
+                 x: 0, 
+                 y: 0, 
+                 scale: 0, 
+                 opacity: 0,
+                 width: p.size, 
+                 height: p.size, 
+                 boxShadow: '0 0 8px 2px rgba(255, 215, 0, 0.8)'
+               }}
                animate={{
                  x: Math.cos(p.angle) * p.velocity,
                  y: Math.sin(p.angle) * p.velocity + 20, // Gravity effect
@@ -266,7 +272,7 @@ export function NewYearAnimation() {
                }}
              />
           ))}
-        </div>
+        </motion.div>
       ))}
     </div>
   );
@@ -293,7 +299,7 @@ export function ValentineAnimation() {
         <motion.svg
           key={i}
           className="absolute fill-[#FA004F] opacity-60 drop-shadow-[0_0_10px_rgba(250,0,79,0.5)]"
-          style={{
+          initial={{
             left: h.left,
             bottom: -50,
             width: h.size,
